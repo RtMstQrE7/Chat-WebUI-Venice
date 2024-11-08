@@ -117,7 +117,11 @@ marked.setOptions({
     highlight: function(code, language) {
         if (language && hljs.getLanguage(language)) {
             try {
-                return hljs.highlight(language, code).value;
+                const highlighted = hljs.highlight(code, {
+                    language: language,
+                    ignoreIllegals: true
+                });
+                return highlighted.value;
             } catch (err) {
                 console.error('Highlight.js error:', err);
             }
@@ -127,13 +131,22 @@ marked.setOptions({
 });
 
 // Function to initialize highlight.js
-function initializeHighlighting() {
-    document.querySelectorAll('pre code').forEach((block) => {
-        hljs.highlightBlock(block);
+function initializeHighlighting(element) {
+    // If no specific element is provided, use document
+    const container = element || document;
+    container.querySelectorAll('pre code').forEach((block) => {
+        // Skip if already highlighted
+        if (block.hasAttribute('data-highlighted')) return;
+        
+        try {
+            hljs.highlightElement(block);
+        } catch (e) {
+            console.warn('Highlighting error:', e);
+        }
     });
 }
 
-// Code block title function
+// Optimize wrapCodeBlocksWithTitle function
 function wrapCodeBlocksWithTitle(element, markdownText) {
     const preElements = element.querySelectorAll('pre');
     const codeBlockRegex = /```([a-zA-Z0-9+#]+)?(?::[\w\/.-]+)?\n([\s\S]*?)```/g;
@@ -150,31 +163,60 @@ function wrapCodeBlocksWithTitle(element, markdownText) {
         const languageClass = code.className.match(/language-(\w+)/);
         const language = languageClass ? languageClass[1] : 'plaintext';
 
-        // Create wrapper
+        // Create wrapper div
         const wrapper = document.createElement('div');
         wrapper.className = 'code-block';
-        wrapper.innerHTML = `
-            <div class="code-title">
-                <span>${language}</span>
-                <button class="copy-button">
-                    <img src="/static/images/icons/copy.svg" alt="Copy" class="icon-svg">
-                </button>
-            </div>
-        `;
-
-        // Move the pre element inside wrapper
-        pre.parentNode.insertBefore(wrapper, pre);
-        wrapper.appendChild(pre);
         
-        // Click event listener to copy button
-        const copyButton = wrapper.querySelector('.copy-button');
+        // Create title div
+        const titleDiv = document.createElement('div');
+        titleDiv.className = 'code-title';
+        
+        // Create language span
+        const langSpan = document.createElement('span');
+        langSpan.textContent = language;
+        titleDiv.appendChild(langSpan);
+        
+        // Create copy button
+        const copyButton = document.createElement('button');
+        copyButton.className = 'copy-button';
+        copyButton.innerHTML = '<img src="/static/images/icons/copy.svg" alt="Copy" class="icon-svg">';
         copyButton.addEventListener('click', () => {
             const codeText = code.textContent.replace(/\n$/, '');
             copyToClipboard(codeText, copyButton);
         });
         
-        // Highlight the code block
-        hljs.highlightBlock(code);
+        // Add button to title
+        titleDiv.appendChild(copyButton);
+        
+        // Clone the pre element to avoid reference issues
+        const preClone = pre.cloneNode(true);
+        
+        // Remove any existing highlighting data
+        const clonedCode = preClone.querySelector('code');
+        if (clonedCode) {
+            clonedCode.removeAttribute('data-highlighted');
+            // Remove highlight.js classes but keep language class
+            const languageClass = clonedCode.className.match(/language-\w+/);
+            clonedCode.className = languageClass ? languageClass[0] : '';
+        }
+        
+        // Build the wrapper structure
+        wrapper.appendChild(titleDiv);
+        wrapper.appendChild(preClone);
+        
+        // Replace the original pre with the wrapper
+        if (pre.parentNode) {
+            pre.parentNode.replaceChild(wrapper, pre);
+        }
+        
+        // Highlight the cloned code block
+        if (clonedCode) {
+            try {
+                hljs.highlightElement(clonedCode);
+            } catch (e) {
+                console.warn('Highlighting error:', e);
+            }
+        }
     });
 }
 
@@ -954,9 +996,110 @@ async function sendMessage(event) {
 
                 const chunk = decoder.decode(value);
                 fullResponse += chunk;
-                assistantMessage.innerHTML = marked.parse(fullResponse);
-                wrapCodeBlocksWithTitle(assistantMessage, fullResponse);
-                initializeHighlighting();
+                const newContent = marked.parse(fullResponse);
+                if (assistantMessage.innerHTML !== newContent) {
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = newContent;
+                    
+                    // Store existing code blocks with their content as a reference
+                    const existingCodeBlocks = new Map();
+                    assistantMessage.querySelectorAll('.code-block').forEach(block => {
+                        const codeContent = block.querySelector('code')?.textContent;
+                        if (codeContent) {
+                            existingCodeBlocks.set(codeContent, block);
+                        }
+                    });
+                    
+                    // Process nodes one by one
+                    if (!assistantMessage.firstChild) {
+                        assistantMessage.appendChild(tempDiv.firstChild);
+                    } else {
+                        const oldNodes = Array.from(assistantMessage.childNodes);
+                        const newNodes = Array.from(tempDiv.childNodes);
+                        
+                        for (let i = 0; i < newNodes.length; i++) {
+                            const newNode = newNodes[i];
+                            const oldNode = oldNodes[i];
+                            
+                            // Check if this is a code block
+                            const newCodeBlock = newNode.querySelector?.('pre code');
+                            if (newCodeBlock) {
+                                const codeContent = newCodeBlock.textContent;
+                                const existingBlock = existingCodeBlocks.get(codeContent);
+                                
+                                if (existingBlock) {
+                                    // Reuse existing block if content matches
+                                    if (i < oldNodes.length) {
+                                        if (!oldNode.isEqualNode(existingBlock)) {
+                                            assistantMessage.replaceChild(existingBlock, oldNode);
+                                        }
+                                    } else {
+                                        assistantMessage.appendChild(existingBlock);
+                                    }
+                                    existingCodeBlocks.delete(codeContent); // Mark as used
+                                } else {
+                                    // Create new code block wrapper
+                                    const pre = newCodeBlock.parentElement;
+                                    if (!pre) continue;
+                                    
+                                    const codeWrapper = document.createElement('div');
+                                    codeWrapper.className = 'code-block';
+                                    
+                                    // Create title div
+                                    const titleDiv = document.createElement('div');
+                                    titleDiv.className = 'code-title';
+                                    
+                                    // Get language
+                                    const languageClass = newCodeBlock.className.match(/language-(\w+)/);
+                                    const language = languageClass ? languageClass[1] : 'plaintext';
+                                    
+                                    // Add language span
+                                    const langSpan = document.createElement('span');
+                                    langSpan.textContent = language;
+                                    titleDiv.appendChild(langSpan);
+                                    
+                                    // Add copy button
+                                    const copyButton = document.createElement('button');
+                                    copyButton.className = 'copy-button';
+                                    copyButton.innerHTML = '<img src="/static/images/icons/copy.svg" alt="Copy" class="icon-svg">';
+                                    copyButton.onclick = () => copyToClipboard(codeContent, copyButton);
+                                    titleDiv.appendChild(copyButton);
+                                    
+                                    // Add to wrapper
+                                    codeWrapper.appendChild(titleDiv);
+                                    codeWrapper.appendChild(pre.cloneNode(true));
+                                    
+                                    // Replace or append
+                                    if (i < oldNodes.length) {
+                                        assistantMessage.replaceChild(codeWrapper, oldNode);
+                                    } else {
+                                        assistantMessage.appendChild(codeWrapper);
+                                    }
+                                    
+                                    // Highlight new block
+                                    const newCode = codeWrapper.querySelector('code');
+                                    if (newCode && !newCode.hasAttribute('data-highlighted')) {
+                                        hljs.highlightElement(newCode);
+                                    }
+                                }
+                            } else {
+                                // Handle non-code content
+                                if (i < oldNodes.length) {
+                                    if (!oldNode.isEqualNode(newNode)) {
+                                        assistantMessage.replaceChild(newNode.cloneNode(true), oldNode);
+                                    }
+                                } else {
+                                    assistantMessage.appendChild(newNode.cloneNode(true));
+                                }
+                            }
+                        }
+                        
+                        // Remove any extra old nodes
+                        while (oldNodes.length > newNodes.length) {
+                            assistantMessage.removeChild(assistantMessage.lastChild);
+                        }
+                    }
+                }
             } catch (error) {
                 if (error.name === 'AbortError') {
                     console.log('Stream aborted by user');
@@ -1239,6 +1382,7 @@ function updateChatHistory() {
     chatHistory.scrollTop = currentScroll;
 }
 
+// Optimize switchConversation function
 async function switchConversation(conversationId) {
     if (currentConversationId === conversationId) return;
     
@@ -1285,219 +1429,86 @@ async function switchConversation(conversationId) {
     conversationHistory = [...conversations[conversationId].messages];
     chatMessages.innerHTML = '';
     
+    const fragment = document.createDocumentFragment();
+    
     conversationHistory.forEach(msg => {
-        // Check if this is an image message
-        if (msg.role === 'user' && Array.isArray(msg.content?.content || msg.content)) {
-            const messageContent = msg.content?.content || msg.content;
-            if (messageContent[1]?.type === 'image_url') {
-                const base64Image = messageContent[1].image_url.url;
-                const textContent = messageContent[0].text;
-                const fileName = msg.metadata?.fileName || 'Uploaded Image';
-                
-                // Create file indicator container
-                const indicatorContainer = document.createElement('div');
-                indicatorContainer.className = 'file-indicator-container';
-                
-                // Create file indicator
-                const fileIndicator = document.createElement('div');
-                fileIndicator.className = 'file-indicator';
-                fileIndicator.innerHTML = `
-                    <div class="file-header">
-                        <div class="file-icon">
-                            <img src="/static/images/icons/image.svg" alt="Image" class="icon-svg">
-                        </div>
-                        <div class="file-details">
-                            <span class="file-name">${fileName}</span>
-                            <span class="file-size">Image</span>
-                        </div>
-                    </div>
-                    <div class="image-preview">
-                        <img src="${base64Image}" alt="Preview" style="max-width: 200px; max-height: 200px; border-radius: 5px; margin-top: 10px;">
-                    </div>
-                `;
-                
-                // Store the content and filename in data attributes
-                fileIndicator.dataset.content = base64Image;
-                fileIndicator.dataset.filename = fileName;
-                
-                // Create button container
-                const buttonContainer = document.createElement('div');
-                buttonContainer.className = 'message-buttons';
-
-                // Add delete button
-                const deleteButton = document.createElement('button');
-                deleteButton.className = 'message-delete-button';
-                deleteButton.innerHTML = '<img src="/static/images/icons/trash.svg" alt="Delete" class="icon-svg">';
-                deleteButton.onclick = () => handleMessageDelete(fileIndicator, messageContent, 'user');
-
-                buttonContainer.appendChild(deleteButton);
-                
-                // Add components to container
-                indicatorContainer.appendChild(fileIndicator);
-                indicatorContainer.appendChild(buttonContainer);
-                
-                chatMessages.appendChild(indicatorContainer);
-
-                // Add text message if it exists
-                if (textContent) {
-                    const messageContainer = document.createElement('div');
-                    messageContainer.className = 'user-message-container';
-                    const messageDiv = document.createElement('div');
-                    messageDiv.id = 'user-message';
-                    messageDiv.textContent = textContent;
-                    messageContainer.appendChild(messageDiv);
-
-                    // Add buttons for text message
-                    const textButtonContainer = document.createElement('div');
-                    textButtonContainer.className = 'message-buttons';
-
-                    const editButton = document.createElement('button');
-                    editButton.className = 'message-edit-button';
-                    editButton.innerHTML = '<img src="/static/images/icons/pencil.svg" alt="Edit" class="icon-svg">';
-                    editButton.onclick = () => handleMessageEdit(messageDiv, textContent, 'user');
-
-                    const copyButton = document.createElement('button');
-                    copyButton.className = 'message-copy-button';
-                    copyButton.innerHTML = '<img src="/static/images/icons/copy.svg" alt="Copy" class="icon-svg">';
-                    copyButton.onclick = () => copyToClipboard(textContent, copyButton);
-
-                    const deleteButton = document.createElement('button');
-                    deleteButton.className = 'message-delete-button';
-                    deleteButton.innerHTML = '<img src="/static/images/icons/trash.svg" alt="Delete" class="icon-svg">';
-                    deleteButton.onclick = () => handleMessageDelete(messageDiv, textContent, 'user');
-
-                    textButtonContainer.appendChild(editButton);
-                    textButtonContainer.appendChild(copyButton);
-                    textButtonContainer.appendChild(deleteButton);
-                    messageContainer.appendChild(textButtonContainer);
-
-                    chatMessages.appendChild(messageContainer);
-                }
+        const messageContainer = document.createElement('div');
+        messageContainer.className = `${msg.role}-message-container`;
+        const messageDiv = document.createElement('div');
+        messageDiv.id = `${msg.role}-message`;
+        
+        if (msg.role === 'assistant') {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = marked.parse(msg.content);
+            
+            // Transfer nodes from tempDiv to messageDiv
+            while (tempDiv.firstChild) {
+                messageDiv.appendChild(tempDiv.firstChild);
             }
-        }
-        // Check if this is a document message
-        else if (msg.role === 'user' && msg.content.startsWith('[Document:')) {
-            const match = msg.content.match(/\[Document: (.*?)\]/);
-            if (match) {
-                const fileName = match[1];
-                const content = msg.content.replace(/\[Document: .*?\]\n\n/, '');
-                
-                // Create file indicator container
-                const indicatorContainer = document.createElement('div');
-                indicatorContainer.className = 'file-indicator-container';
-                
-                // Create file indicator
-                const fileIndicator = document.createElement('div');
-                fileIndicator.className = 'file-indicator';
-                fileIndicator.innerHTML = `
-                    <div class="file-header">
-                        <div class="file-icon">
-                            <img src="/static/images/icons/document.svg" alt="Document" class="icon-svg">
-                        </div>
-                        <div class="file-details">
-                            <span class="file-name">${fileName}</span>
-                            <span class="file-size">Document</span>
-                        </div>
-                    </div>
-                `;
-                
-                // Store the content in a data attribute
-                fileIndicator.dataset.content = content;
-                
-                // Create button container
-                const buttonContainer = document.createElement('div');
-                buttonContainer.className = 'message-buttons';
-
-                // Add copy button
-                const copyButton = document.createElement('button');
-                copyButton.className = 'message-copy-button';
-                copyButton.innerHTML = '<img src="/static/images/icons/copy.svg" alt="Copy" class="icon-svg">';
-                copyButton.onclick = () => copyToClipboard(content, copyButton);
-
-                // Add view button
-                const viewButton = document.createElement('button');
-                viewButton.className = 'message-view-button';
-                viewButton.innerHTML = '<img src="/static/images/icons/eye.svg" alt="View" class="icon-svg">';
-                viewButton.onclick = () => toggleFileContent(fileIndicator);
-
-                // Add delete button
-                const deleteButton = document.createElement('button');
-                deleteButton.className = 'message-delete-button';
-                deleteButton.innerHTML = '<img src="/static/images/icons/trash.svg" alt="Delete" class="icon-svg">';
-                deleteButton.onclick = () => handleMessageDelete(fileIndicator, msg.content, 'user');
-
-                buttonContainer.appendChild(viewButton);
-                buttonContainer.appendChild(copyButton);
-                buttonContainer.appendChild(deleteButton);
-                
-                // Add components to container
-                indicatorContainer.appendChild(fileIndicator);
-                indicatorContainer.appendChild(buttonContainer);
-                
-                chatMessages.appendChild(indicatorContainer);
-            }
+            
+            wrapCodeBlocksWithTitle(messageDiv, msg.content);
+            initializeHighlighting();
         } else {
-            // Handle regular messages
-            const messageContainer = document.createElement('div');
-            messageContainer.className = `${msg.role}-message-container`;
-            const messageDiv = document.createElement('div');
-            messageDiv.id = `${msg.role}-message`;
-            
-            if (msg.role === 'assistant') {
-                messageDiv.innerHTML = marked.parse(msg.content);
-                wrapCodeBlocksWithTitle(messageDiv, msg.content);
-                initializeHighlighting();
-            } else {
-                messageDiv.textContent = msg.content;
-            }
-            
-            messageContainer.appendChild(messageDiv);
-
-            // Create button container
-            const buttonContainer = document.createElement('div');
-            buttonContainer.className = 'message-buttons';
-
-            // Add edit button
-            const editButton = document.createElement('button');
-            editButton.className = 'message-edit-button';
-            editButton.innerHTML = '<img src="/static/images/icons/pencil.svg" alt="Edit" class="icon-svg">';
-            editButton.onclick = () => handleMessageEdit(messageDiv, msg.content, msg.role);
-
-            // Add copy button
-            const copyButton = document.createElement('button');
-            copyButton.className = 'message-copy-button';
-            copyButton.innerHTML = '<img src="/static/images/icons/copy.svg" alt="Copy" class="icon-svg">';
-            copyButton.onclick = () => copyToClipboard(msg.content, copyButton);
-
-            // Add delete button
-            const deleteButton = document.createElement('button');
-            deleteButton.className = 'message-delete-button';
-            deleteButton.innerHTML = '<img src="/static/images/icons/trash.svg" alt="Delete" class="icon-svg">';
-            deleteButton.onclick = () => handleMessageDelete(messageDiv, msg.content, msg.role);
-
-            // Add continue button for assistant messages
-            if (msg.role === 'assistant') {
-                const continueButton = document.createElement('button');
-                continueButton.className = 'message-continue-button';
-                continueButton.innerHTML = '<img src="/static/images/icons/continue.svg" alt="Continue" class="icon-svg">';
-                continueButton.onclick = () => handleContinueGeneration(messageDiv, msg.content);
-                
-                buttonContainer.appendChild(editButton);
-                buttonContainer.appendChild(copyButton);
-                buttonContainer.appendChild(deleteButton);
-                buttonContainer.appendChild(continueButton);
-            } else {
-                buttonContainer.appendChild(editButton);
-                buttonContainer.appendChild(copyButton);
-                buttonContainer.appendChild(deleteButton);
-            }
-
-            messageContainer.appendChild(buttonContainer);
-            chatMessages.appendChild(messageContainer);
+            messageDiv.textContent = msg.content;
         }
+        
+        messageContainer.appendChild(messageDiv);
+        
+        // Add buttons using DocumentFragment
+        const buttonFragment = createMessageButtons(messageDiv, msg.content, msg.role);
+        messageContainer.appendChild(buttonFragment);
+        
+        fragment.appendChild(messageContainer);
     });
     
+    // Single DOM operation to update chat messages
+    chatMessages.appendChild(fragment);
+    
     updateChatHistory();
+}
+
+// Helper function to create message buttons
+function createMessageButtons(messageDiv, content, role) {
+    const fragment = document.createDocumentFragment();
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'message-buttons';
+
+    const buttons = [
+        {
+            className: 'message-edit-button',
+            icon: 'pencil',
+            handler: () => handleMessageEdit(messageDiv, content, role)
+        },
+        {
+            className: 'message-copy-button',
+            icon: 'copy',
+            handler: () => copyToClipboard(content)
+        },
+        {
+            className: 'message-delete-button',
+            icon: 'trash',
+            handler: () => handleMessageDelete(messageDiv, content, role)
+        }
+    ];
+
+    if (role === 'assistant') {
+        buttons.push({
+            className: 'message-continue-button',
+            icon: 'continue',
+            handler: () => handleContinueGeneration(messageDiv, content)
+        });
+    }
+
+    buttons.forEach(btn => {
+        const button = document.createElement('button');
+        button.className = btn.className;
+        button.innerHTML = `<img src="/static/images/icons/${btn.icon}.svg" alt="${btn.icon}" class="icon-svg">`;
+        button.onclick = btn.handler;
+        buttonContainer.appendChild(button);
+    });
+
+    fragment.appendChild(buttonContainer);
+    return fragment;
 }
 
 async function deleteConversation(conversationId) {
@@ -2059,9 +2070,110 @@ async function sendEditedMessage(newContent, apiConversationHistory) {
 
                 const chunk = decoder.decode(value);
                 fullResponse += chunk;
-                assistantMessage.innerHTML = marked.parse(fullResponse);
-                wrapCodeBlocksWithTitle(assistantMessage, fullResponse);
-                initializeHighlighting();
+                const newContent = marked.parse(fullResponse);
+                if (assistantMessage.innerHTML !== newContent) {
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = newContent;
+                    
+                    // Store existing code blocks with their content as a reference
+                    const existingCodeBlocks = new Map();
+                    assistantMessage.querySelectorAll('.code-block').forEach(block => {
+                        const codeContent = block.querySelector('code')?.textContent;
+                        if (codeContent) {
+                            existingCodeBlocks.set(codeContent, block);
+                        }
+                    });
+                    
+                    // Process nodes one by one
+                    if (!assistantMessage.firstChild) {
+                        assistantMessage.appendChild(tempDiv.firstChild);
+                    } else {
+                        const oldNodes = Array.from(assistantMessage.childNodes);
+                        const newNodes = Array.from(tempDiv.childNodes);
+                        
+                        for (let i = 0; i < newNodes.length; i++) {
+                            const newNode = newNodes[i];
+                            const oldNode = oldNodes[i];
+                            
+                            // Check if this is a code block
+                            const newCodeBlock = newNode.querySelector?.('pre code');
+                            if (newCodeBlock) {
+                                const codeContent = newCodeBlock.textContent;
+                                const existingBlock = existingCodeBlocks.get(codeContent);
+                                
+                                if (existingBlock) {
+                                    // Reuse existing block if content matches
+                                    if (i < oldNodes.length) {
+                                        if (!oldNode.isEqualNode(existingBlock)) {
+                                            assistantMessage.replaceChild(existingBlock, oldNode);
+                                        }
+                                    } else {
+                                        assistantMessage.appendChild(existingBlock);
+                                    }
+                                    existingCodeBlocks.delete(codeContent); // Mark as used
+                                } else {
+                                    // Create new code block wrapper
+                                    const pre = newCodeBlock.parentElement;
+                                    if (!pre) continue;
+                                    
+                                    const codeWrapper = document.createElement('div');
+                                    codeWrapper.className = 'code-block';
+                                    
+                                    // Create title div
+                                    const titleDiv = document.createElement('div');
+                                    titleDiv.className = 'code-title';
+                                    
+                                    // Get language
+                                    const languageClass = newCodeBlock.className.match(/language-(\w+)/);
+                                    const language = languageClass ? languageClass[1] : 'plaintext';
+                                    
+                                    // Add language span
+                                    const langSpan = document.createElement('span');
+                                    langSpan.textContent = language;
+                                    titleDiv.appendChild(langSpan);
+                                    
+                                    // Add copy button
+                                    const copyButton = document.createElement('button');
+                                    copyButton.className = 'copy-button';
+                                    copyButton.innerHTML = '<img src="/static/images/icons/copy.svg" alt="Copy" class="icon-svg">';
+                                    copyButton.onclick = () => copyToClipboard(codeContent, copyButton);
+                                    titleDiv.appendChild(copyButton);
+                                    
+                                    // Add to wrapper
+                                    codeWrapper.appendChild(titleDiv);
+                                    codeWrapper.appendChild(pre.cloneNode(true));
+                                    
+                                    // Replace or append
+                                    if (i < oldNodes.length) {
+                                        assistantMessage.replaceChild(codeWrapper, oldNode);
+                                    } else {
+                                        assistantMessage.appendChild(codeWrapper);
+                                    }
+                                    
+                                    // Highlight new block
+                                    const newCode = codeWrapper.querySelector('code');
+                                    if (newCode && !newCode.hasAttribute('data-highlighted')) {
+                                        hljs.highlightElement(newCode);
+                                    }
+                                }
+                            } else {
+                                // Handle non-code content
+                                if (i < oldNodes.length) {
+                                    if (!oldNode.isEqualNode(newNode)) {
+                                        assistantMessage.replaceChild(newNode.cloneNode(true), oldNode);
+                                    }
+                                } else {
+                                    assistantMessage.appendChild(newNode.cloneNode(true));
+                                }
+                            }
+                        }
+                        
+                        // Remove any extra old nodes
+                        while (oldNodes.length > newNodes.length) {
+                            assistantMessage.removeChild(assistantMessage.lastChild);
+                        }
+                    }
+                }
             } catch (error) {
                 if (error.name === 'AbortError') {
                     console.log('Stream aborted by user');
@@ -2080,15 +2192,17 @@ async function sendEditedMessage(newContent, apiConversationHistory) {
     scrollBottomButton.style.display = 'none';
 }
 
-// Continue generation handler
+// Optimize handleContinueGeneration function
 async function handleContinueGeneration(messageDiv, originalContent) {
     const assistantMessageContainer = messageDiv.closest('.assistant-message-container');
     const buttonContainer = assistantMessageContainer.querySelector('.message-buttons');
     
     // Disable the continue button while generating
     const continueButton = buttonContainer.querySelector('.message-continue-button');
-    continueButton.style.opacity = '0.5';
-    continueButton.style.pointerEvents = 'none';
+    if (continueButton) {
+        continueButton.style.opacity = '0.5';
+        continueButton.style.pointerEvents = 'none';
+    }
     
     try {
         currentController = new AbortController();
@@ -2120,32 +2234,145 @@ async function handleContinueGeneration(messageDiv, originalContent) {
                     toggleSubmitButtonIcon(false);
                     
                     // Update the conversation history with the continued response
-                    const messageIndex = findMessageIndex(originalContent);
+                    const messageIndex = findMessageIndex(originalContent, 'assistant');
                     if (messageIndex !== -1) {
+                        // Update the message in conversation history
                         conversationHistory[messageIndex].content = continuedResponse;
-                        if (!isPrivateChat) {
+                        
+                        // If not in private mode, update storage
+                        if (!isPrivateChat && currentConversationId) {
                             conversations[currentConversationId].messages = [...conversationHistory];
-                            saveConversationsToStorage();
+                            await saveConversationsToStorage();
                         }
                     }
                     
                     // Re-enable the continue button
-                    continueButton.style.opacity = '1';
-                    continueButton.style.pointerEvents = 'auto';
+                    if (continueButton) {
+                        continueButton.style.opacity = '1';
+                        continueButton.style.pointerEvents = 'auto';
+                    }
                     break;
                 }
 
                 const chunk = decoder.decode(value);
                 continuedResponse += chunk;
-                messageDiv.innerHTML = marked.parse(continuedResponse);
-                wrapCodeBlocksWithTitle(messageDiv, continuedResponse);
-                initializeHighlighting();
+                const newContent = marked.parse(continuedResponse);
+                
+                // Create a temporary div to hold the new content
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = newContent;
+                
+                // Store existing code blocks with their content as a reference
+                const existingCodeBlocks = new Map();
+                messageDiv.querySelectorAll('.code-block').forEach(block => {
+                    const codeContent = block.querySelector('code')?.textContent;
+                    if (codeContent) {
+                        existingCodeBlocks.set(codeContent, block);
+                    }
+                });
+                
+                // Clear existing content if this is the first update
+                if (!messageDiv.firstChild) {
+                    messageDiv.appendChild(tempDiv.firstChild);
+                } else {
+                    // Process nodes one by one
+                    const oldNodes = Array.from(messageDiv.childNodes);
+                    const newNodes = Array.from(tempDiv.childNodes);
+                    
+                    // Update or append nodes
+                    for (let i = 0; i < newNodes.length; i++) {
+                        const newNode = newNodes[i];
+                        const oldNode = oldNodes[i];
+                        
+                        // Handle code blocks
+                        const newCodeBlock = newNode.querySelector?.('pre code');
+                        if (newCodeBlock) {
+                            const codeContent = newCodeBlock.textContent;
+                            const existingBlock = existingCodeBlocks.get(codeContent);
+                            
+                            if (existingBlock) {
+                                // Reuse existing block if content matches
+                                if (i < oldNodes.length) {
+                                    if (!oldNode.isEqualNode(existingBlock)) {
+                                        messageDiv.replaceChild(existingBlock.cloneNode(true), oldNode);
+                                    }
+                                } else {
+                                    messageDiv.appendChild(existingBlock.cloneNode(true));
+                                }
+                                existingCodeBlocks.delete(codeContent);
+                            } else {
+                                // Create new code block wrapper
+                                const pre = newCodeBlock.parentElement;
+                                if (!pre) continue;
+                                
+                                const codeWrapper = document.createElement('div');
+                                codeWrapper.className = 'code-block';
+                                
+                                // Create title div
+                                const titleDiv = document.createElement('div');
+                                titleDiv.className = 'code-title';
+                                
+                                // Get language
+                                const languageClass = newCodeBlock.className.match(/language-(\w+)/);
+                                const language = languageClass ? languageClass[1] : 'plaintext';
+                                
+                                // Add language span
+                                const langSpan = document.createElement('span');
+                                langSpan.textContent = language;
+                                titleDiv.appendChild(langSpan);
+                                
+                                // Add copy button
+                                const copyButton = document.createElement('button');
+                                copyButton.className = 'copy-button';
+                                copyButton.innerHTML = '<img src="/static/images/icons/copy.svg" alt="Copy" class="icon-svg">';
+                                copyButton.onclick = () => copyToClipboard(codeContent, copyButton);
+                                titleDiv.appendChild(copyButton);
+                                
+                                // Add to wrapper
+                                codeWrapper.appendChild(titleDiv);
+                                codeWrapper.appendChild(pre.cloneNode(true));
+                                
+                                // Replace or append
+                                if (i < oldNodes.length) {
+                                    messageDiv.replaceChild(codeWrapper, oldNode);
+                                } else {
+                                    messageDiv.appendChild(codeWrapper);
+                                }
+                                
+                                // Highlight new block
+                                const newCode = codeWrapper.querySelector('code');
+                                if (newCode && !newCode.hasAttribute('data-highlighted')) {
+                                    hljs.highlightElement(newCode);
+                                }
+                            }
+                        } else {
+                            // Handle non-code content
+                            if (i < oldNodes.length) {
+                                if (!oldNode.isEqualNode(newNode)) {
+                                    messageDiv.replaceChild(newNode.cloneNode(true), oldNode);
+                                }
+                            } else {
+                                messageDiv.appendChild(newNode.cloneNode(true));
+                            }
+                        }
+                    }
+                    
+                    // Remove any extra old nodes if new content is shorter
+                    while (messageDiv.childNodes.length > newNodes.length) {
+                        const lastChild = messageDiv.lastChild;
+                        if (lastChild) {
+                            messageDiv.removeChild(lastChild);
+                        }
+                    }
+                }
             } catch (error) {
                 if (error.name === 'AbortError') {
                     console.log('Stream aborted by user');
                     toggleSubmitButtonIcon(false);
-                    continueButton.style.opacity = '1';
-                    continueButton.style.pointerEvents = 'auto';
+                    if (continueButton) {
+                        continueButton.style.opacity = '1';
+                        continueButton.style.pointerEvents = 'auto';
+                    }
                     return;
                 }
                 throw error;
@@ -2155,8 +2382,10 @@ async function handleContinueGeneration(messageDiv, originalContent) {
         console.error('Error:', error);
         currentController = null;
         toggleSubmitButtonIcon(false);
-        continueButton.style.opacity = '1';
-        continueButton.style.pointerEvents = 'auto';
+        if (continueButton) {
+            continueButton.style.opacity = '1';
+            continueButton.style.pointerEvents = 'auto';
+        }
     }
 }
 
