@@ -1,9 +1,12 @@
 <h1 align="center">
-  <strong>Chat WebUI</strong>
+  <strong>💫 Chat WebUI  🤖💫</strong>
 </h1>
 
 
 **Fully Offline Chat User Interface for Large Language Models**
+
+![image](https://github.com/user-attachments/assets/39b795a5-f7e4-4b55-bf6b-6d380587e452)
+
 
 Chat WebUI is an open-source, locally hosted web application that puts the power of conversational AI at your fingertips. With a user-friendly and intuitive interface, you can effortlessly interact with text, document, vision models and access to a range of useful built-in tools to streamline your workflow.
 
@@ -49,13 +52,17 @@ python app.py
 ### Running the Application
 
 1. Open a web browser and navigate to `http://localhost:5000`
-2. Start chatting!
+2. Press setting button at the top right corner and setup Base URL and API Key
+3. Select model at top left side of screen
+4. Start chatting!
+
+*If you are using Local LLM make sure to start the endpoint first before running app.py*
 
 
 # Features
 
 ### Smart Built-in Tools
-The application comes with a range of built-in tools that can be used to perform various tasks, such as:
+Chat WebUI comes with a range of built-in tools that can be used to perform various tasks, such as:
   
 1. Online web search
 2. YouTube video summarization
@@ -78,12 +85,17 @@ The tool will automatically call the right function based on the link you provid
 
 ### YouTube Summarizer
 You can include a YouTube URL in your query to obtain a summary of the video. For example:
+
+
 ```
 
 @s what is this video about? https://www.youtube.com/watch?v=b4x8boB2KdI
 
 ```
+![image](https://github.com/user-attachments/assets/704e2f19-ee01-4b43-a314-eae8c3df04cb)
 The order of your query and URL does not matter, for example this will work too:
+
+
 ```
 
 @s https://www.youtube.com/watch?v=b4x8boB2KdI what is this video about? 
@@ -139,10 +151,33 @@ This also has built-in prompt that you can use by simply pasting the url:
 If you do not include a URL in your query, the application will perform a web search using the built-in prompt:
 ```
 
-@s upcoming triple A games
+@s latest released movies
 
 ```
 Please note that custom queries are not currently supported. For optimal results, format your query in a manner similar to a Google search.
+
+### Private Chat
+Toggle it if you want to chat without saving it into conversation history. \
+\
+![image](https://github.com/user-attachments/assets/6505d914-bf4e-4405-9a98-ee85ca8aa24d)
+
+
+### Deep Query
+This send your query using jailbreak prompt. If there is still refusal then edit the refusal message and change it into 'I can indulge'.\
+
+![image](https://github.com/user-attachments/assets/fd533678-aa98-449a-8570-edc532eceaa4)
+
+
+
+
+
+
+## Export Button
+There is export button that will appear when you hover at the bottom left corner. This allows you to export your chat using JSON or Markdown.
+
+![image](https://github.com/user-attachments/assets/be796691-09d7-434b-84c0-f80389d68da3)
+
+
 
 ## Contributing
 
