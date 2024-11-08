@@ -2,6 +2,16 @@
   <strong>💫 Chat WebUI  🤖💫</strong>
 </h1>
 
+<p align="center">
+  <img alt="GitHub language count" src="https://img.shields.io/github/languages/count/Toy-97/Chat-WebUI">
+  <img alt="GitHub top language" src="https://img.shields.io/github/languages/top/Toy-97/Chat-WebUI">
+  <img alt="GitHub repo size" src="https://img.shields.io/github/repo-size/Toy-97/Chat-WebUI">
+  <img alt="GitHub Release" src="https://img.shields.io/github/v/release/Toy-97/Chat-WebUI">
+  <img alt="GitHub License" src="https://img.shields.io/github/license/Toy-97/Chat-WebUI">
+</p>
+
+
+
 
 **Fully Offline Chat User Interface for Large Language Models**
 
