@@ -168,16 +168,23 @@ This send your query using jailbreak prompt. If there is still refusal then edit
 ![image](https://github.com/user-attachments/assets/fd533678-aa98-449a-8570-edc532eceaa4)
 
 
-
-
-
-
-## Export Button
+### Export Button
 There is export button that will appear when you hover at the bottom left corner. This allows you to export your chat using JSON or Markdown.
 
 ![image](https://github.com/user-attachments/assets/be796691-09d7-434b-84c0-f80389d68da3)
 
+### Additional Settings
+You can set model parameter by pressing the additional setting button next to setting button at top right corner.\
+\
+![image](https://github.com/user-attachments/assets/3652d7ed-868e-468d-80b6-5b66d37aa5f5)
+\
+\
+There are 4 buttons here. 'Precise' will set your temperature to 0, 'Balanced' will set it to 0.5, and 'Creative' will set it to 1. Alternatively, you can use the 'Custom' option to manually set your sampler settings by separating them with commas. For example:
+```
 
+temperature=1, min_p=0.05
+
+```
 
 ## Contributing
 
