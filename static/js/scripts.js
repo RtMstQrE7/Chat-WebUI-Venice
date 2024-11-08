@@ -1735,7 +1735,7 @@ function handleMessageEdit(messageDiv, originalContent, role) {
 
     // Send button handler
     sendButton.onclick = async () => {
-        const newContent = textarea.value;
+        const editedContent = textarea.value; // Changed from newContent to editedContent
         clearMessagesAfter(editContainer);
         
         // Clean up conversation history for API
@@ -1754,7 +1754,7 @@ function handleMessageEdit(messageDiv, originalContent, role) {
         
         conversationHistory = conversationHistory.slice(0, messageIndex);
         editContainer.remove();
-        await sendEditedMessage(newContent, apiConversationHistory);
+        await sendEditedMessage(editedContent, apiConversationHistory);
     };
     
     // Cancel button handler
@@ -1909,12 +1909,12 @@ function clearMessagesAfter(element) {
 }
 
 // Function to handle sending edited messages
-async function sendEditedMessage(newContent, apiConversationHistory) {
+async function sendEditedMessage(editedContent, apiConversationHistory) {
     const userMessageContainer = document.createElement('div');
     userMessageContainer.className = 'user-message-container';
     const userMessageDiv = document.createElement('div');
     userMessageDiv.id = 'user-message';
-    userMessageDiv.textContent = newContent;
+    userMessageDiv.textContent = editedContent;
     userMessageContainer.appendChild(userMessageDiv);
 
     // Create button container
@@ -1924,17 +1924,17 @@ async function sendEditedMessage(newContent, apiConversationHistory) {
     const editButton = document.createElement('button');
     editButton.className = 'message-edit-button';
     editButton.innerHTML = '<img src="/static/images/icons/pencil.svg" alt="Edit" class="icon-svg">';
-    editButton.onclick = () => handleMessageEdit(userMessageDiv, newContent, 'user');
+    editButton.onclick = () => handleMessageEdit(userMessageDiv, editedContent, 'user');
 
     const copyButton = document.createElement('button');
     copyButton.className = 'message-copy-button';
     copyButton.innerHTML = '<img src="/static/images/icons/copy.svg" alt="Copy" class="icon-svg">';
-    copyButton.onclick = () => copyToClipboard(newContent, copyButton);
+    copyButton.onclick = () => copyToClipboard(editedContent, copyButton);
 
     const deleteButton = document.createElement('button');
     deleteButton.className = 'message-delete-button';
     deleteButton.innerHTML = '<img src="/static/images/icons/trash.svg" alt="Delete" class="icon-svg">';
-    deleteButton.onclick = () => handleMessageDelete(userMessageDiv, newContent, 'user');
+    deleteButton.onclick = () => handleMessageDelete(userMessageDiv, editedContent, 'user');
 
     buttonContainer.appendChild(editButton);
     buttonContainer.appendChild(copyButton);
@@ -1974,12 +1974,12 @@ async function sendEditedMessage(newContent, apiConversationHistory) {
         toggleSubmitButtonIcon(true);
         
         const requestBody = {
-            message: newContent,
+            message: editedContent,
             model: selectedModel,
             systemContent: SYSTEM_CONTENT,
             parameters: MODEL_PARAMETERS,
             isNewChat: isNewChat,
-            conversation: apiConversationHistory // Use cleaned conversation history
+            conversation: apiConversationHistory
         };
         
         const response = await fetch('/chat', {
@@ -2032,7 +2032,8 @@ async function sendEditedMessage(newContent, apiConversationHistory) {
                     buttonContainer.appendChild(continueButton);
                     assistantMessageContainer.appendChild(buttonContainer);
 
-                    conversationHistory.push({ role: "user", content: newContent });
+                    // Update conversation history with edited message and response
+                    conversationHistory.push({ role: "user", content: editedContent });
                     conversationHistory.push({ role: "assistant", content: fullResponse });
                     
                     if (!isPrivateChat) {
@@ -2047,9 +2048,9 @@ async function sendEditedMessage(newContent, apiConversationHistory) {
                                         'Content-Type': 'application/json'
                                     },
                                     body: JSON.stringify({
-                                        message: newContent,
+                                        message: editedContent,
                                         model: selectedModel,
-                                        assistantResponse: fullResponse.slice(0, 500) // Add first 500 chars of assistant response
+                                        assistantResponse: fullResponse.slice(0, 500)
                                     })
                                 });
                                 
@@ -2956,4 +2957,3 @@ function toggleDeepQuery() {
 
 // Event listener for deep query button
 document.getElementById('deep-query').addEventListener('click', toggleDeepQuery);
-
