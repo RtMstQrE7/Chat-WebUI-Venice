@@ -11,12 +11,12 @@
     <script src="{{ url_for('static', filename='js/marked.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/dexie.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/mammoth.browser.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/pdf.min.js') }}"></script>
     <script>
         window.pdfjsLib = window.pdfjsLib || {};
         window.pdfjsLib.GlobalWorkerOptions = window.pdfjsLib.GlobalWorkerOptions || {};
         window.pdfjsLib.GlobalWorkerOptions.workerSrc = '{{ url_for("static", filename="js/pdf.worker.min.js") }}';
     </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}" type="image/x-icon">
     <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}" type="image/x-icon">
 </head>
