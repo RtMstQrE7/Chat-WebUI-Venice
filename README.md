@@ -12,6 +12,7 @@ Chat WebUI is an open-source, locally hosted web application that puts the power
 * **Inspired by ChatGPT**: Experience the same intuitive interface, now with expanded capabilities
 * **Multi-Model Support**: Seamlessly switch between text and vision models to suit your needs
 * **OpenAI Compatible**: Compatible with all OpenAI API endpoints, ensuring maximum flexibility
+* **Chat Exporting**: Easily export your chat using JSON or Markdown format.
 * **Built-in Tools and Services**:
   * **Web Search**: Instantly find relevant information from across the web
   * **YouTube Video Summarizer**: Save time with concise summaries of YouTube videos
@@ -149,14 +150,4 @@ Contributions are welcome! If you'd like to contribute to the project, please fo
 
 ## License
 
-This project is licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+Open-source and freely available under the [MIT License](https://opensource.org/licenses/MIT). Check the [LICENSE](LICENSE) file for specifics.
