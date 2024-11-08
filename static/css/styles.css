@@ -285,7 +285,7 @@ body,html {
     max-width: 750px;
     width: 100%;
     padding-top: 9px;
-    margin: 0 auto 50px;
+    margin: 0 auto 50px auto;
     display: flex;
     flex-direction: column
 }
@@ -345,7 +345,7 @@ body,html {
 }
 
 strong {
-    color: #e9e9e9;
+    color: #ececec;
     font-weight: 597
 }
 
