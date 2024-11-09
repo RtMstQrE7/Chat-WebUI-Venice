@@ -198,6 +198,46 @@ const MarkdownContent = React.memo(({ content }) => {
         }
     }, [selectionState, restoreSelection]);
 
+    const processSvelteSyntax = (content) => {
+        return content
+            // Script and style tags
+            .replace(/(<script.*?>)/g, '<span class="hljs-tag">$1</span>')
+            .replace(/(<\/script>)/g, '<span class="hljs-tag">$1</span>')
+            .replace(/(<style.*?>)/g, '<span class="hljs-tag">$1</span>')
+            .replace(/(<\/style>)/g, '<span class="hljs-tag">$1</span>')
+            
+            // Svelte control flow
+            .replace(/(\{#if\s+[^}]*\})/g, '<span class="hljs-template-tag">$1</span>')
+            .replace(/(\{:else\s*if\s+[^}]*\})/g, '<span class="hljs-template-tag">$1</span>')
+            .replace(/(\{:else\})/g, '<span class="hljs-template-tag">$1</span>')
+            .replace(/(\{\/if\})/g, '<span class="hljs-template-tag">$1</span>')
+            .replace(/(\{#each\s+[^}]*\})/g, '<span class="hljs-template-tag">$1</span>')
+            .replace(/(\{\/each\})/g, '<span class="hljs-template-tag">$1</span>')
+            .replace(/(\{#await\s+[^}]*\})/g, '<span class="hljs-template-tag">$1</span>')
+            .replace(/(\{:then\s+[^}]*\})/g, '<span class="hljs-template-tag">$1</span>')
+            .replace(/(\{:catch\s+[^}]*\})/g, '<span class="hljs-template-tag">$1</span>')
+            .replace(/(\{\/await\})/g, '<span class="hljs-template-tag">$1</span>')
+            
+            // Svelte directives and bindings
+            .replace(/(\son:[\w]+(?:=["'][^"']*["'])?)/g, '<span class="hljs-attr">$1</span>')
+            .replace(/(bind:[\w]+(?:=["'][^"']*["'])?)/g, '<span class="hljs-attr">$1</span>')
+            .replace(/(use:[\w]+(?:=["'][^"']*["'])?)/g, '<span class="hljs-attr">$1</span>')
+            .replace(/(transition:[\w]+(?:=["'][^"']*["'])?)/g, '<span class="hljs-attr">$1</span>')
+            .replace(/(in:[\w]+(?:=["'][^"']*["'])?)/g, '<span class="hljs-attr">$1</span>')
+            .replace(/(out:[\w]+(?:=["'][^"']*["'])?)/g, '<span class="hljs-attr">$1</span>')
+            .replace(/(animate:[\w]+(?:=["'][^"']*["'])?)/g, '<span class="hljs-attr">$1</span>')
+            
+            // Reactive statements and props
+            .replace(/(\$:\s+[^;]+;?)/g, '<span class="hljs-keyword">$1</span>')
+            .replace(/(export\s+let\s+[\w]+)/g, '<span class="hljs-keyword">$1</span>')
+            
+            // Reactive store references
+            .replace(/(\$[\w]+)(?!\w)/g, '<span class="hljs-template-variable">$1</span>')
+            
+            // Regular expressions for curly brace expressions, but not control flow
+            .replace(/(\{(?![\/#:])(?:[^{}]|\{[^{}]*\})*\})/g, '<span class="hljs-template-variable">$1</span>');
+    };
+
     // Parse markdown and extract code blocks
     const renderContent = () => {
         const tokens = marked.lexer(content);
@@ -207,46 +247,9 @@ const MarkdownContent = React.memo(({ content }) => {
                 const [lang, ...pathParts] = (token.lang || '').split(':');
                 const filePath = pathParts.join(':');
                 
-                // Special handling for Svelte code blocks
                 let processedContent = token.text;
                 if (lang?.toLowerCase().includes('svelte')) {
-                    processedContent = token.text
-                        // Script and style tags
-                        .replace(/(<script.*?>)/g, '<span class="hljs-tag">$1</span>')
-                        .replace(/(<\/script>)/g, '<span class="hljs-tag">$1</span>')
-                        .replace(/(<style.*?>)/g, '<span class="hljs-tag">$1</span>')
-                        .replace(/(<\/style>)/g, '<span class="hljs-tag">$1</span>')
-                        
-                        // Svelte control flow
-                        .replace(/(\{#if\s+[^}]*\})/g, '<span class="hljs-template-tag">$1</span>')
-                        .replace(/(\{:else\s*if\s+[^}]*\})/g, '<span class="hljs-template-tag">$1</span>')
-                        .replace(/(\{:else\})/g, '<span class="hljs-template-tag">$1</span>')
-                        .replace(/(\{\/if\})/g, '<span class="hljs-template-tag">$1</span>')
-                        .replace(/(\{#each\s+[^}]*\})/g, '<span class="hljs-template-tag">$1</span>')
-                        .replace(/(\{\/each\})/g, '<span class="hljs-template-tag">$1</span>')
-                        .replace(/(\{#await\s+[^}]*\})/g, '<span class="hljs-template-tag">$1</span>')
-                        .replace(/(\{:then\s+[^}]*\})/g, '<span class="hljs-template-tag">$1</span>')
-                        .replace(/(\{:catch\s+[^}]*\})/g, '<span class="hljs-template-tag">$1</span>')
-                        .replace(/(\{\/await\})/g, '<span class="hljs-template-tag">$1</span>')
-                        
-                        // Svelte directives and bindings
-                        .replace(/(\son:[\w]+(?:=["'][^"']*["'])?)/g, '<span class="hljs-attr">$1</span>')
-                        .replace(/(bind:[\w]+(?:=["'][^"']*["'])?)/g, '<span class="hljs-attr">$1</span>')
-                        .replace(/(use:[\w]+(?:=["'][^"']*["'])?)/g, '<span class="hljs-attr">$1</span>')
-                        .replace(/(transition:[\w]+(?:=["'][^"']*["'])?)/g, '<span class="hljs-attr">$1</span>')
-                        .replace(/(in:[\w]+(?:=["'][^"']*["'])?)/g, '<span class="hljs-attr">$1</span>')
-                        .replace(/(out:[\w]+(?:=["'][^"']*["'])?)/g, '<span class="hljs-attr">$1</span>')
-                        .replace(/(animate:[\w]+(?:=["'][^"']*["'])?)/g, '<span class="hljs-attr">$1</span>')
-                        
-                        // Reactive statements and props
-                        .replace(/(\$:\s+[^;]+;?)/g, '<span class="hljs-keyword">$1</span>')
-                        .replace(/(export\s+let\s+[\w]+)/g, '<span class="hljs-keyword">$1</span>')
-                        
-                        // Reactive store references
-                        .replace(/(\$[\w]+)(?!\w)/g, '<span class="hljs-template-variable">$1</span>')
-                        
-                        // Regular expressions for curly brace expressions, but not control flow
-                        .replace(/(\{(?![\/#:])(?:[^{}]|\{[^{}]*\})*\})/g, '<span class="hljs-template-variable">$1</span>');
+                    processedContent = processSvelteSyntax(token.text);
                 }
                 
                 return React.createElement(CodeBlock, {
@@ -255,9 +258,51 @@ const MarkdownContent = React.memo(({ content }) => {
                     content: processedContent,
                     fileName: filePath || token.fileName
                 });
+            } else if (token.type === 'list') {
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = marked.parser([token]);
+                
+                // Process code blocks within list items
+                tempDiv.querySelectorAll('pre code').forEach((codeElement) => {
+                    const preElement = codeElement.parentElement;
+                    const language = (codeElement.className.match(/language-(\w+)/) || [])[1] || 'plaintext';
+                    const codeContent = codeElement.textContent;
+                    
+                    let processedContent = codeContent;
+                    if (language.toLowerCase().includes('svelte')) {
+                        processedContent = processSvelteSyntax(codeContent);
+                    }
+                    
+                    const codeWrapper = document.createElement('div');
+                    codeWrapper.className = 'code-block-wrapper';
+                    codeWrapper.setAttribute('data-language', language);
+                    codeWrapper.setAttribute('data-content', processedContent);
+                    
+                    preElement.replaceWith(codeWrapper);
+                });
+                
+                return React.createElement('div', {
+                    key: `list-${index}`,
+                    className: 'markdown-block list',
+                    dangerouslySetInnerHTML: { __html: tempDiv.innerHTML },
+                    ref: (node) => {
+                        if (node) {
+                            node.querySelectorAll('.code-block-wrapper').forEach((wrapper) => {
+                                const language = wrapper.getAttribute('data-language');
+                                const codeContent = wrapper.getAttribute('data-content');
+                                
+                                ReactDOM.createRoot(wrapper).render(
+                                    React.createElement(CodeBlock, {
+                                        language: language,
+                                        content: codeContent
+                                    })
+                                );
+                            });
+                        }
+                    }
+                });
             }
             
-            // For non-code blocks, wrap each paragraph in its own element
             const html = marked.parser([token]);
             return React.createElement('div', {
                 key: `content-${index}`,
@@ -367,31 +412,30 @@ function wrapCodeBlocksWithTitle(element, markdownText) {
 
         // Special handling for Svelte - register it as HTML + JS
         if (language.toLowerCase().includes('svelte')) {
-            language = 'html';
+            language = 'html';  // Keep it as svelte instead of html
             code.className = 'language-html hljs';
             
-            // Pre-process the code to handle Svelte-specific syntax
             let content = code.innerHTML;
             content = content
-                // Script and style tags
-                .replace(/(&lt;script.*?&gt;)/g, '<span class="hljs-tag">$1</span>')
-                .replace(/(&lt;\/script&gt;)/g, '<span class="hljs-tag">$1</span>')
-                .replace(/(&lt;style.*?&gt;)/g, '<span class="hljs-tag">$1</span>')
-                .replace(/(&lt;\/style&gt;)/g, '<span class="hljs-tag">$1</span>')
+                // Script and style tags - treat as blocks
+                .replace(/(&lt;script.*?&gt;)/g, '$1')
+                .replace(/(&lt;\/script&gt;)/g, '$1')
+                .replace(/(&lt;style.*?&gt;)/g, '$1')
+                .replace(/(&lt;\/style&gt;)/g, '$1')
                 
-                // Svelte control flow
-                .replace(/(\{#if\s+[^}]*\})/g, '<span class="hljs-template-tag">$1</span>')
-                .replace(/(\{:else\s*if\s+[^}]*\})/g, '<span class="hljs-template-tag">$1</span>')
-                .replace(/(\{:else\})/g, '<span class="hljs-template-tag">$1</span>')
-                .replace(/(\{\/if\})/g, '<span class="hljs-template-tag">$1</span>')
-                .replace(/(\{#each\s+[^}]*\})/g, '<span class="hljs-template-tag">$1</span>')
-                .replace(/(\{\/each\})/g, '<span class="hljs-template-tag">$1</span>')
-                .replace(/(\{#await\s+[^}]*\})/g, '<span class="hljs-template-tag">$1</span>')
-                .replace(/(\{:then\s+[^}]*\})/g, '<span class="hljs-template-tag">$1</span>')
-                .replace(/(\{:catch\s+[^}]*\})/g, '<span class="hljs-template-tag">$1</span>')
-                .replace(/(\{\/await\})/g, '<span class="hljs-template-tag">$1</span>')
+                // Svelte control flow with proper highlighting
+                .replace(/(\{#if\s+[^}]*\})/g, '<span class="hljs-keyword">$1</span>')
+                .replace(/(\{:else\s*if\s+[^}]*\})/g, '<span class="hljs-keyword">$1</span>')
+                .replace(/(\{:else\})/g, '<span class="hljs-keyword">$1</span>')
+                .replace(/(\{\/if\})/g, '<span class="hljs-keyword">$1</span>')
+                .replace(/(\{#each\s+[^}]*\})/g, '<span class="hljs-keyword">$1</span>')
+                .replace(/(\{\/each\})/g, '<span class="hljs-keyword">$1</span>')
+                .replace(/(\{#await\s+[^}]*\})/g, '<span class="hljs-keyword">$1</span>')
+                .replace(/(\{:then\s+[^}]*\})/g, '<span class="hljs-keyword">$1</span>')
+                .replace(/(\{:catch\s+[^}]*\})/g, '<span class="hljs-keyword">$1</span>')
+                .replace(/(\{\/await\})/g, '<span class="hljs-keyword">$1</span>')
                 
-                // Svelte directives and bindings
+                // Svelte directives with proper highlighting
                 .replace(/(\son:[\w]+(?:=["'][^"']*["'])?)/g, '<span class="hljs-attr">$1</span>')
                 .replace(/(bind:[\w]+(?:=["'][^"']*["'])?)/g, '<span class="hljs-attr">$1</span>')
                 .replace(/(use:[\w]+(?:=["'][^"']*["'])?)/g, '<span class="hljs-attr">$1</span>')
@@ -404,11 +448,15 @@ function wrapCodeBlocksWithTitle(element, markdownText) {
                 .replace(/(\$:\s+[^;]+;?)/g, '<span class="hljs-keyword">$1</span>')
                 .replace(/(export\s+let\s+[\w]+)/g, '<span class="hljs-keyword">$1</span>')
                 
-                // Reactive store references
-                .replace(/(\$[\w]+)(?!\w)/g, '<span class="hljs-template-variable">$1</span>')
+                // Reactive store references (only highlight the $ prefix)
+                .replace(/(\$)([\w]+)(?!\w)/g, '<span class="hljs-keyword">$1</span>$2')
                 
-                // Regular expressions for curly brace expressions, but not control flow
-                .replace(/(\{(?![\/#:])(?:[^{}]|\{[^{}]*\})*\})/g, '<span class="hljs-template-variable">$1</span>');
+                // Only highlight actual template variables, not all curly braces
+                .replace(/(\{(?![\/#:])[^{}]+\})/g, (match) => {
+                    // Don't highlight if it's already part of a keyword or directive
+                    if (match.includes('class="hljs-')) return match;
+                    return '<span class="hljs-variable">' + match + '</span>';
+                });
             
             code.innerHTML = content;
             setTimeout(() => {
