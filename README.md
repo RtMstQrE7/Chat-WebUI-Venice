@@ -20,7 +20,9 @@
 
 Chat WebUI is an open-source, locally hosted web application that puts the power of conversational AI at your fingertips. With a user-friendly and intuitive interface, you can effortlessly interact with text, document, vision models and access to a range of useful built-in tools to streamline your workflow.
 
-### Key Features
+
+
+## Key Features
 
 * **Inspired by ChatGPT**: Experience the same intuitive interface, now with expanded capabilities
 * **Multi-Model Support**: Seamlessly switch between text and vision models to suit your needs
@@ -32,7 +34,9 @@ Chat WebUI is an open-source, locally hosted web application that puts the power
   * **Webpage Summarizer**: Extract key points from webpages and condense them into easy-to-read summaries
   * **arXiv Paper Summarizer**: Unlock insights from academic papers with LLM-powered summarization
 
-### Installation
+
+
+## Installation
 
 1. Clone the repository:
 ```
@@ -186,7 +190,9 @@ There is export button that will appear when you hover at the bottom left corner
 ### Additional Settings
 You can set model parameter by pressing the additional setting button next to setting button at top right corner.\
 \
-![image](https://github.com/user-attachments/assets/3652d7ed-868e-468d-80b6-5b66d37aa5f5)
+![image](https://github.com/user-attachments/assets/0f696fd8-22ce-4e03-a813-78a9b6a5adf0)
+
+
 \
 \
 There are 4 buttons here. 'Precise' will set your temperature to 0, 'Balanced' will set it to 0.5, and 'Creative' will set it to 1. Alternatively, you can use the 'Custom' option to manually set your sampler settings by separating them with commas. For example:
@@ -195,6 +201,10 @@ There are 4 buttons here. 'Precise' will set your temperature to 0, 'Balanced' w
 temperature=1, min_p=0.05
 
 ```
+
+### Quirks
+You can drag and drop image and text document to the chat window. RAG currently not supported so text document will use the full text as a context.
+
 
 ## Contributing
 
