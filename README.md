@@ -127,13 +127,13 @@ This will employ the built-in prompt to generate a concise summary of the video.
 Include an arXiv URL in your query to receive a brief summary of the paper or abstract:
 ```
 
-@s Explain this paper to me https://arxiv.org/pdf/1706.03762
+@s explain this paper to me https://arxiv.org/pdf/1706.03762
 
 ```
 Abstract URLs are also supported:
 ```
 
-@s Simply explain this abstract https://arxiv.org/abs/1706.03762
+@s simply explain this abstract https://arxiv.org/abs/1706.03762
 
 
 ```
