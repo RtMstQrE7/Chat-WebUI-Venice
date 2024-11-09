@@ -176,13 +176,13 @@ Toggle it if you want to chat without saving it into conversation history. \
 
 
 ### Deep Query
-This send your query using jailbreak prompt. If there is still refusal then edit the refusal message and change it into 'I can indulge'.\
+This send your query using jailbreak prompt. If there is still refusal then edit the refusal message and change it into 'I can indulge'.
 
 ![image](https://github.com/user-attachments/assets/fd533678-aa98-449a-8570-edc532eceaa4)
 
 
 ### Export Button
-There is export button that will appear when you hover at the bottom left corner. This allows you to export your chat using JSON or Markdown.
+There is export button that will appear when you hover at the bottom left corner. This allows you to export your chat using JSON or Markdown format.
 
 ![image](https://github.com/user-attachments/assets/be796691-09d7-434b-84c0-f80389d68da3)
 
