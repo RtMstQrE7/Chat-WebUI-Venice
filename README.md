@@ -135,7 +135,6 @@ Abstract URLs are also supported:
 
 @s simply explain this abstract https://arxiv.org/abs/1706.03762
 
-
 ```
 
 You can also paste the link to utilize the built-in prompt:
