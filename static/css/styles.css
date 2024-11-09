@@ -549,6 +549,24 @@ strong {
     display: none
 }
 
+div p code {
+    background-color: #1a1a1a;
+    padding: 1px 5px;
+    border-radius: 3px;
+}
+
+div ol li code {
+    background-color: #1a1a1a;
+    padding: 1px 5px;
+    border-radius: 3px;
+}
+
+div ul li code {
+    background-color: #1a1a1a;
+    padding: 1px 5px;
+    border-radius: 3px;
+}
+
 .hljs {
     background: #282c34;
     color: #f1f1f1!important;
@@ -556,14 +574,31 @@ strong {
     line-height: 1.5
 }
 
+.hljs-line {
+    display: inline-block;
+    width: 100%;
+    margin: 0 !important;
+}
+
 .code-block {
-    position: relative;
     margin: 10px 0;
-    border-radius: 3px 3px 3px 3px;
-    border: .3px solid #3e3e3e;
-    overflow: hidden;
-    max-width: 100%;
-    font: 15.79px"Monaco"
+    background-color: #1a1a1a;
+    border: 0.3px solid #3e3e3e;
+    border-radius: 3px;
+}
+
+.code-block pre {
+    margin: 0;
+    padding: 0 !important;
+    border-radius: 3px 3px 0 0 !important;
+    background-color: #1a1a1a !important;
+}
+
+.code-block pre code {
+    font: 15.3px "Consolas";
+    padding: 19px !important;
+    line-height: 1.9 !important;
+    background-color: #1a1a1a !important;
 }
 
 .code-block .code-title {
@@ -601,14 +636,6 @@ strong {
 
 .code-block .code-title .copy-button .fa-check {
     color: #ececec
-}
-
-#assistant-message .code-block pre {
-    border-radius: 0;
-    margin: 0;
-    background-color: #070707;
-    color: #eee;
-    padding: 0!important
 }
 
 #chat-history {
@@ -808,25 +835,10 @@ strong {
     color: #ececec
 }
 
-#assistant-message code {
-    background-color: #1a1a1a;
-    padding: 2px 4px;
-    border-radius: 3px;
-    font-family: "Consolas",monospace
-}
-
 #assistant-message pre {
     padding: 1em;
     border-radius: 5px;
     overflow-x: auto
-}
-
-#assistant-message pre code {
-    padding: 19px;
-    border-radius: 0;
-    line-height: 1.9!important;
-    transition: none;
-    scroll-behavior: auto
 }
 
 #assistant-message blockquote {
@@ -1575,4 +1587,12 @@ background-color: #404040;
 .toast .toast-message {
     font-size: 14px;
     font-weight: 500
+}
+
+.hljs-template-tag {
+    color: #7c9cff;  /* Light blue for control flow tags */
+}
+
+.hljs-template-variable {
+    color: #e06c75;  /* Pink/red for variables */
 }
