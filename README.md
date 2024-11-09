@@ -176,7 +176,7 @@ Toggle it if you want to chat without saving it into conversation history. \
 
 
 ### Deep Query
-This send your query using jailbreak prompt. If there is still refusal then edit the refusal message and change it into 'I can indulge'.
+This send your query using jailbreak prompt. If there is still refusal then edit the refusal message and change it into 'I can indulge' then press continue button.
 
 ![image](https://github.com/user-attachments/assets/fd533678-aa98-449a-8570-edc532eceaa4)
 
