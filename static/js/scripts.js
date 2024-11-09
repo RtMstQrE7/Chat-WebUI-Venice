@@ -201,10 +201,10 @@ const MarkdownContent = React.memo(({ content }) => {
     const processSvelteSyntax = (content) => {
         return content
             // Script and style tags
-            .replace(/(<script.*?>)/g, '<span class="hljs-tag">$1</span>')
-            .replace(/(<\/script>)/g, '<span class="hljs-tag">$1</span>')
-            .replace(/(<style.*?>)/g, '<span class="hljs-tag">$1</span>')
-            .replace(/(<\/style>)/g, '<span class="hljs-tag">$1</span>')
+            .replace(/(&lt;script.*?&gt;|<script.*?>)/g, '<span class="hljs-tag">$1</span>')
+            .replace(/(&lt;\/script&gt;|<\/script>)/g, '<span class="hljs-tag">$1</span>')
+            .replace(/(&lt;style.*?&gt;|<style.*?>)/g, '<span class="hljs-tag">$1</span>')
+            .replace(/(&lt;\/style&gt;|<\/style>)/g, '<span class="hljs-tag">$1</span>')
             
             // Svelte control flow
             .replace(/(\{#if\s+[^}]*\})/g, '<span class="hljs-template-tag">$1</span>')
@@ -236,6 +236,15 @@ const MarkdownContent = React.memo(({ content }) => {
             
             // Regular expressions for curly brace expressions, but not control flow
             .replace(/(\{(?![\/#:])(?:[^{}]|\{[^{}]*\})*\})/g, '<span class="hljs-template-variable">$1</span>');
+
+            // Export statements in script
+            .replace(/(export\s+let\s+\w+)/g, '<span class="hljs-keyword">$1</span>')
+            
+            // Curly brace expressions (but not control flow)
+            .replace(/(\{(?!#|\/|:)[^}]*\})/g, '<span class="hljs-template-variable">$1</span>')
+            
+            // HTML tags
+            .replace(/(&lt;\/?[a-zA-Z][^&>]*&gt;|<\/?[a-zA-Z][^>]*>)/g, '<span class="hljs-tag">$1</span>');
     };
 
     // Parse markdown and extract code blocks
