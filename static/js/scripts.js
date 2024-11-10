@@ -55,11 +55,20 @@ let hasImageAttached = false;
 let isDeepQueryMode = false;
 
 // CodeBlock component's highlighting logic
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 const CodeBlock = React.memo(({ language, content, fileName }) => {
+    const [copied, setCopied] = React.useState(false);
+
     const copyCode = () => {
         navigator.clipboard.writeText(content)
             .then(() => {
-                // Handle success feedback if needed
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
             })
             .catch(console.error);
     };
@@ -91,8 +100,8 @@ const CodeBlock = React.memo(({ language, content, fileName }) => {
                 onClick: copyCode,
                 title: 'Copy code'
             }, React.createElement('img', {
-                src: '/static/images/icons/copy.svg',
-                alt: 'Copy',
+                src: copied ? '/static/images/icons/check.svg' : '/static/images/icons/copy.svg',
+                alt: copied ? 'Copied' : 'Copy',
                 className: 'icon-svg'
             }))
         ),
