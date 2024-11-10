@@ -54,15 +54,7 @@ let isPrivateChat = false;
 let hasImageAttached = false;
 let isDeepQueryMode = false;
 
-// Create a React component for markdown content
-const escapeHtml = (text) => {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-};
-
-hljs.registerAliases('svelte', { languageName: 'xml' });
-
+// CodeBlock component's highlighting logic
 const CodeBlock = React.memo(({ language, content, fileName }) => {
     const copyCode = () => {
         navigator.clipboard.writeText(content)
@@ -72,33 +64,41 @@ const CodeBlock = React.memo(({ language, content, fileName }) => {
             .catch(console.error);
     };
 
-    // Pre-process the code content
     const highlightedCode = React.useMemo(() => {
         try {
-            // Extract just the language part before any colon
-            const finalLanguage = (language || 'plaintext').split(':')[0];
-            return hljs.highlight(content, { language: finalLanguage }).value;
+            const finalLanguage = (language || 'bash').split(':')[0].toLowerCase();
+            return hljs.highlight(content, { 
+                language: finalLanguage,
+                ignoreIllegals: true 
+            }).value;
         } catch (e) {
             console.warn('Failed to highlight code:', e);
             return escapeHtml(content);
         }
     }, [content, language]);
 
+    // Get display language name
+    const displayLanguage = React.useMemo(() => {
+        if (fileName) return fileName;
+        return (language || 'bash').split(':')[0].toLowerCase();
+    }, [language, fileName]);
+
     return React.createElement('div', { className: 'code-block' },
         React.createElement('div', { className: 'code-title' },
-            React.createElement('span', null, fileName || language || 'plaintext'),
+            React.createElement('span', null, displayLanguage),
             React.createElement('button', {
                 className: 'copy-button',
-                onClick: copyCode
+                onClick: copyCode,
+                title: 'Copy code'
             }, React.createElement('img', {
                 src: '/static/images/icons/copy.svg',
                 alt: 'Copy',
                 className: 'icon-svg'
             }))
         ),
-        React.createElement('pre', null,
+        React.createElement('pre', { className: 'code-pre' },
             React.createElement('code', {
-                className: `language-${(language || 'plaintext').split(':')[0]} hljs`,
+                className: `language-${(language || 'bash').split(':')[0]} hljs`,
                 dangerouslySetInnerHTML: { __html: highlightedCode }
             })
         )
@@ -198,55 +198,6 @@ const MarkdownContent = React.memo(({ content }) => {
         }
     }, [selectionState, restoreSelection]);
 
-    const processSvelteSyntax = (content) => {
-        return content
-            // Script and style tags
-            .replace(/(&lt;script.*?&gt;|<script.*?>)/g, '<span class="hljs-tag">$1</span>')
-            .replace(/(&lt;\/script&gt;|<\/script>)/g, '<span class="hljs-tag">$1</span>')
-            .replace(/(&lt;style.*?&gt;|<style.*?>)/g, '<span class="hljs-tag">$1</span>')
-            .replace(/(&lt;\/style&gt;|<\/style>)/g, '<span class="hljs-tag">$1</span>')
-            
-            // Svelte control flow
-            .replace(/(\{#if\s+[^}]*\})/g, '<span class="hljs-template-tag">$1</span>')
-            .replace(/(\{:else\s*if\s+[^}]*\})/g, '<span class="hljs-template-tag">$1</span>')
-            .replace(/(\{:else\})/g, '<span class="hljs-template-tag">$1</span>')
-            .replace(/(\{\/if\})/g, '<span class="hljs-template-tag">$1</span>')
-            .replace(/(\{#each\s+[^}]*\})/g, '<span class="hljs-template-tag">$1</span>')
-            .replace(/(\{\/each\})/g, '<span class="hljs-template-tag">$1</span>')
-            .replace(/(\{#await\s+[^}]*\})/g, '<span class="hljs-template-tag">$1</span>')
-            .replace(/(\{:then\s+[^}]*\})/g, '<span class="hljs-template-tag">$1</span>')
-            .replace(/(\{:catch\s+[^}]*\})/g, '<span class="hljs-template-tag">$1</span>')
-            .replace(/(\{\/await\})/g, '<span class="hljs-template-tag">$1</span>')
-            
-            // Svelte directives and bindings
-            .replace(/(\son:[\w]+(?:=["'][^"']*["'])?)/g, '<span class="hljs-attr">$1</span>')
-            .replace(/(bind:[\w]+(?:=["'][^"']*["'])?)/g, '<span class="hljs-attr">$1</span>')
-            .replace(/(use:[\w]+(?:=["'][^"']*["'])?)/g, '<span class="hljs-attr">$1</span>')
-            .replace(/(transition:[\w]+(?:=["'][^"']*["'])?)/g, '<span class="hljs-attr">$1</span>')
-            .replace(/(in:[\w]+(?:=["'][^"']*["'])?)/g, '<span class="hljs-attr">$1</span>')
-            .replace(/(out:[\w]+(?:=["'][^"']*["'])?)/g, '<span class="hljs-attr">$1</span>')
-            .replace(/(animate:[\w]+(?:=["'][^"']*["'])?)/g, '<span class="hljs-attr">$1</span>')
-            
-            // Reactive statements and props
-            .replace(/(\$:\s+[^;]+;?)/g, '<span class="hljs-keyword">$1</span>')
-            .replace(/(export\s+let\s+[\w]+)/g, '<span class="hljs-keyword">$1</span>')
-            
-            // Reactive store references
-            .replace(/(\$[\w]+)(?!\w)/g, '<span class="hljs-template-variable">$1</span>')
-            
-            // Regular expressions for curly brace expressions, but not control flow
-            .replace(/(\{(?![\/#:])(?:[^{}]|\{[^{}]*\})*\})/g, '<span class="hljs-template-variable">$1</span>');
-
-            // Export statements in script
-            .replace(/(export\s+let\s+\w+)/g, '<span class="hljs-keyword">$1</span>')
-            
-            // Curly brace expressions (but not control flow)
-            .replace(/(\{(?!#|\/|:)[^}]*\})/g, '<span class="hljs-template-variable">$1</span>')
-            
-            // HTML tags
-            .replace(/(&lt;\/?[a-zA-Z][^&>]*&gt;|<\/?[a-zA-Z][^>]*>)/g, '<span class="hljs-tag">$1</span>');
-    };
-
     // Parse markdown and extract code blocks
     const renderContent = () => {
         const tokens = marked.lexer(content);
@@ -256,15 +207,15 @@ const MarkdownContent = React.memo(({ content }) => {
                 const [lang, ...pathParts] = (token.lang || '').split(':');
                 const filePath = pathParts.join(':');
                 
-                let processedContent = token.text;
-                if (lang?.toLowerCase().includes('svelte')) {
-                    processedContent = processSvelteSyntax(token.text);
-                }
+                // Clean the code content of any existing hljs spans
+                const cleanContent = token.text
+                    .replace(/<span class="hljs-[^"]*">/g, '')
+                    .replace(/<\/span>/g, '');
                 
                 return React.createElement(CodeBlock, {
                     key: `code-${index}`,
-                    language: lang || 'sh',
-                    content: processedContent,
+                    language: lang || 'bash',
+                    content: cleanContent,
                     fileName: filePath || token.fileName
                 });
             } else if (token.type === 'list') {
@@ -274,18 +225,17 @@ const MarkdownContent = React.memo(({ content }) => {
                 // Process code blocks within list items
                 tempDiv.querySelectorAll('pre code').forEach((codeElement) => {
                     const preElement = codeElement.parentElement;
-                    const language = (codeElement.className.match(/language-(\w+)/) || [])[1] || 'plaintext';
-                    const codeContent = codeElement.textContent;
+                    const language = (codeElement.className.match(/language-(\w+)/) || [])[1] || 'bash';
                     
-                    let processedContent = codeContent;
-                    if (language.toLowerCase().includes('svelte')) {
-                        processedContent = processSvelteSyntax(codeContent);
-                    }
+                    // Clean the code content
+                    const cleanContent = codeElement.textContent
+                        .replace(/<span class="hljs-[^"]*">/g, '')
+                        .replace(/<\/span>/g, '');
                     
                     const codeWrapper = document.createElement('div');
                     codeWrapper.className = 'code-block-wrapper';
                     codeWrapper.setAttribute('data-language', language);
-                    codeWrapper.setAttribute('data-content', processedContent);
+                    codeWrapper.setAttribute('data-content', cleanContent);
                     
                     preElement.replaceWith(codeWrapper);
                 });
@@ -418,63 +368,9 @@ function wrapCodeBlocksWithTitle(element, markdownText) {
         // Get language from the class name that highlight.js adds
         let languageClass = code.className.match(/language-(\w+)/);
         let language = languageClass ? languageClass[1] : 'sh';
-
-        // Special handling for Svelte - register it as HTML + JS
-        if (language.toLowerCase().includes('svelte')) {
-            language = 'html';  // Keep it as svelte instead of html
-            code.className = 'language-html hljs';
-            
-            let content = code.innerHTML;
-            content = content
-                // Script and style tags - treat as blocks
-                .replace(/(&lt;script.*?&gt;)/g, '$1')
-                .replace(/(&lt;\/script&gt;)/g, '$1')
-                .replace(/(&lt;style.*?&gt;)/g, '$1')
-                .replace(/(&lt;\/style&gt;)/g, '$1')
-                
-                // Svelte control flow with proper highlighting
-                .replace(/(\{#if\s+[^}]*\})/g, '<span class="hljs-keyword">$1</span>')
-                .replace(/(\{:else\s*if\s+[^}]*\})/g, '<span class="hljs-keyword">$1</span>')
-                .replace(/(\{:else\})/g, '<span class="hljs-keyword">$1</span>')
-                .replace(/(\{\/if\})/g, '<span class="hljs-keyword">$1</span>')
-                .replace(/(\{#each\s+[^}]*\})/g, '<span class="hljs-keyword">$1</span>')
-                .replace(/(\{\/each\})/g, '<span class="hljs-keyword">$1</span>')
-                .replace(/(\{#await\s+[^}]*\})/g, '<span class="hljs-keyword">$1</span>')
-                .replace(/(\{:then\s+[^}]*\})/g, '<span class="hljs-keyword">$1</span>')
-                .replace(/(\{:catch\s+[^}]*\})/g, '<span class="hljs-keyword">$1</span>')
-                .replace(/(\{\/await\})/g, '<span class="hljs-keyword">$1</span>')
-                
-                // Svelte directives with proper highlighting
-                .replace(/(\son:[\w]+(?:=["'][^"']*["'])?)/g, '<span class="hljs-attr">$1</span>')
-                .replace(/(bind:[\w]+(?:=["'][^"']*["'])?)/g, '<span class="hljs-attr">$1</span>')
-                .replace(/(use:[\w]+(?:=["'][^"']*["'])?)/g, '<span class="hljs-attr">$1</span>')
-                .replace(/(transition:[\w]+(?:=["'][^"']*["'])?)/g, '<span class="hljs-attr">$1</span>')
-                .replace(/(in:[\w]+(?:=["'][^"']*["'])?)/g, '<span class="hljs-attr">$1</span>')
-                .replace(/(out:[\w]+(?:=["'][^"']*["'])?)/g, '<span class="hljs-attr">$1</span>')
-                .replace(/(animate:[\w]+(?:=["'][^"']*["'])?)/g, '<span class="hljs-attr">$1</span>')
-                
-                // Reactive statements and props
-                .replace(/(\$:\s+[^;]+;?)/g, '<span class="hljs-keyword">$1</span>')
-                .replace(/(export\s+let\s+[\w]+)/g, '<span class="hljs-keyword">$1</span>')
-                
-                // Reactive store references (only highlight the $ prefix)
-                .replace(/(\$)([\w]+)(?!\w)/g, '<span class="hljs-keyword">$1</span>$2')
-                
-                // Only highlight actual template variables, not all curly braces
-                .replace(/(\{(?![\/#:])[^{}]+\})/g, (match) => {
-                    // Don't highlight if it's already part of a keyword or directive
-                    if (match.includes('class="hljs-')) return match;
-                    return '<span class="hljs-variable">' + match + '</span>';
-                });
-            
-            code.innerHTML = content;
-            setTimeout(() => {
-                const titleSpan = wrapper.querySelector('.code-title span');
-                if (titleSpan) {
-                    titleSpan.textContent = 'svelte';
-                }
-            }, 0);
-        }
+        
+        // Highlight the code block
+        hljs.highlightBlock(code);
 
         // Create wrapper
         const wrapper = document.createElement('div');
@@ -498,11 +394,6 @@ function wrapCodeBlocksWithTitle(element, markdownText) {
             const codeText = code.textContent.replace(/\n$/, '');
             copyToClipboard(codeText, copyButton);
         });
-        
-        // Highlight the code block if it's not Svelte
-        if (!language.includes('svelte')) {
-            hljs.highlightBlock(code);
-        }
     });
 }
 
@@ -513,7 +404,7 @@ db.version(1).stores({
     currentConversation: 'key'
 });
 
-// Replace saveConversationsToStorage with this
+// Save conversations to IndexedDB
 async function saveConversationsToStorage() {
     try {
         // Save all conversations
@@ -535,7 +426,7 @@ async function saveConversationsToStorage() {
     }
 }
 
-// Replace loadConversationsFromStorage with this
+// Load conversations from IndexedDB
 async function loadConversationsFromStorage() {
     try {
         // Load all conversations
@@ -725,9 +616,14 @@ async function loadConversationsFromStorage() {
                     messageDiv.id = `${msg.role}-message`;
                     
                     if (msg.role === 'assistant') {
-                        messageDiv.innerHTML = marked.parse(msg.content);
-                        wrapCodeBlocksWithTitle(messageDiv, msg.content);
-                        initializeHighlighting();
+                        // Create React root for assistant message
+                        if (!messageDiv.reactRoot) {
+                            messageDiv.reactRoot = ReactDOM.createRoot(messageDiv);
+                        }
+                        // Render markdown content using React
+                        messageDiv.reactRoot.render(
+                            React.createElement(MarkdownContent, { content: msg.content })
+                        );
                     } else {
                         messageDiv.textContent = msg.content;
                     }
@@ -1774,9 +1670,14 @@ async function switchConversation(conversationId) {
             messageDiv.id = `${msg.role}-message`;
             
             if (msg.role === 'assistant') {
-                messageDiv.innerHTML = marked.parse(msg.content);
-                wrapCodeBlocksWithTitle(messageDiv, msg.content);
-                initializeHighlighting();
+                // Create React root for assistant message
+                if (!messageDiv.reactRoot) {
+                    messageDiv.reactRoot = ReactDOM.createRoot(messageDiv);
+                }
+                // Render markdown content using React
+                messageDiv.reactRoot.render(
+                    React.createElement(MarkdownContent, { content: msg.content })
+                );
             } else {
                 messageDiv.textContent = msg.content;
             }
