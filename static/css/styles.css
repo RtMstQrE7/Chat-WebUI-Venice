@@ -312,7 +312,7 @@ body,html {
     font-size: 15.973px;
     padding: 9.7px 19.7px;
     max-width: 530px;
-    white-space: pre-wrap
+    word-wrap: break-word
 }
 
 #user-message p {
