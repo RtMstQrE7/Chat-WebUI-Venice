@@ -184,7 +184,6 @@ def handle_search_command(user_content, results=DEFAULT_RESULTS):
         return ''.join(formatted_texts)
     except Exception as e:
         return f"An error occurred: {e}"
-
 # Function to handle YouTube command
 def handle_youtube_command(user_content):
     patterns = [
@@ -203,14 +202,18 @@ def handle_youtube_command(user_content):
         try:
             # Fetch the list of available transcripts
             transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+
+            language_available = []
+            for transcript in transcript_list:
+              transcript_language = transcript.language_code
+              language_available.append(transcript_language)
             
             # Check if there is an English transcript available
-            if 'en' in transcript_list:
+            if 'en' in language_available:
                 transcript = transcript_list.find_transcript(['en']).fetch()
             else:
                 # If no English transcript, get the first available language
-                first_transcript = next(iter(transcript_list))
-                transcript = first_transcript.fetch()
+                transcript = transcript_list.find_transcript([language_available[0]]).fetch()
             
             # Join the transcript entries into a single string with no newlines
             transcript_text = ' '.join(entry['text'] for entry in transcript)
