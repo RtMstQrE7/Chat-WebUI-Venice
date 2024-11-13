@@ -210,6 +210,7 @@ const MarkdownContent = React.memo(({ content }) => {
     // Parse markdown and extract code blocks
     const renderContent = () => {
         const tokens = marked.lexer(content);
+        marked.use(markedKatex());
         return tokens.map((token, index) => {
             if (token.type === 'code') {
                 // Extract file path if present in the language string
@@ -437,6 +438,7 @@ async function saveConversationsToStorage() {
 
 // Load conversations from IndexedDB
 async function loadConversationsFromStorage() {
+    marked.use(markedKatex());
     try {
         // Load all conversations
         const savedConversations = await db.conversations.toArray();
