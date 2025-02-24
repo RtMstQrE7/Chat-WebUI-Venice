@@ -440,7 +440,6 @@ def chat():
             return
 
         try:
-            print(messages)
             if parameters:
                 stream = openai_client.chat.completions.create(
                     model=selected_model,
