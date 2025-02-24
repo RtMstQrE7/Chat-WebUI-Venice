@@ -27,6 +27,7 @@ Chat WebUI is an open-source, locally hosted web application that puts the power
 * **Inspired by ChatGPT**: Experience the same intuitive interface, now with expanded capabilities
 * **Multi-Model Support**: Seamlessly switch between text and vision models to suit your needs
 * **OpenAI Compatible**: Compatible with all OpenAI API endpoints, ensuring maximum flexibility
+* **Support Reasoning Models**: Harness the power of reasoning model for your task
 * **Chat Exporting**: Easily export your chat using JSON or Markdown format.
 * **Built-in Tools and Services**:
   * **Web Search**: Instantly find relevant information from across the web
@@ -167,29 +168,33 @@ If you do not include a URL in your query, the application will perform a web se
 @s latest released movies
 
 ```
-Please note that custom queries are not currently supported. For optimal results, format your query in a manner similar to a Google search.
+For optimal results, format your query in a manner similar to a Google search.
+
+### Deep Query
+Deep Query function has been changed in v1.1. Now pressing it will send thinking tag to the backend to force the model to think. For example the `</think>` tag.
+You can set specific start tag and end tag for thinking models in additional settings. 
+This should ensure future compatibility for various reasoning model in the future.
+Make sure to set your start tag and end tag in additional settings before using reasoning model. 
+
+![image](https://github.com/user-attachments/assets/0de5380f-8b52-441f-8783-5a0bea89bf14)
+
+### Additional Settings
+You can set model parameter by pressing the additional setting button next to setting button at top right corner.\
+\
+![image](https://github.com/user-attachments/assets/8fb7e72d-770c-47a3-b790-606707432d67)
+
 
 ### Private Chat
 Toggle it if you want to chat without saving it into conversation history. \
 \
 ![image](https://github.com/user-attachments/assets/6505d914-bf4e-4405-9a98-ee85ca8aa24d)
 
-
-### Deep Query
-This send your query using jailbreak prompt. If there is still refusal then edit the refusal message and change it into 'I can indulge' then press continue button.
-
-![image](https://github.com/user-attachments/assets/fd533678-aa98-449a-8570-edc532eceaa4)
-
-
 ### Export Button
 There is export button that will appear when you hover at the bottom left corner. This allows you to export your chat using JSON or Markdown format.
 
 ![image](https://github.com/user-attachments/assets/be796691-09d7-434b-84c0-f80389d68da3)
 
-### Additional Settings
-You can set model parameter by pressing the additional setting button next to setting button at top right corner.\
-\
-![image](https://github.com/user-attachments/assets/0f696fd8-22ce-4e03-a813-78a9b6a5adf0)
+
 
 
 \
