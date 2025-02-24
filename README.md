@@ -168,7 +168,7 @@ If you do not include a URL in your query, the application will perform a web se
 @s latest released movies
 
 ```
-For optimal results, format your query in a manner similar to a Google search.
+For optimal results, format your query in a manner similar to a Google search. You can find the reference URL used in the command prompt window.
 
 ### Deep Query
 Deep Query function has been changed in v1.1. Now pressing it will send thinking tag to the backend to force the model to think. For example the `</think>` tag.
