@@ -99,6 +99,17 @@ function checkForEndTag(content) {
     return DEFAULT_END_TAGS.some(tag => content.includes(tag)) || content.includes(END_TAG);
 }
 
+function formatUserMessage(input) {
+    // Escape HTML special characters
+    const escapedInput = input
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+
+    // Replace newlines with <br> tags
+    return escapedInput.replace(/\n/g, '<br>');
+}
+
 const options = {
     throwOnError: false
 };
@@ -271,16 +282,16 @@ const MarkdownContent = React.memo(({ content, messageEndTag }) => {
     const lastTokensRef = React.useRef([]);
     const [renderedTokens, setRenderedTokens] = React.useState([]);
     
-    // Save selection state before update
+    // Modified saveSelection: capture additional information for selection direction
     const saveSelection = React.useCallback(() => {
         if (!contentRef.current) return null;
-    
+
         const selection = window.getSelection();
         if (!selection.rangeCount) return null;
-    
+
         const range = selection.getRangeAt(0);
         if (!contentRef.current.contains(range.commonAncestorContainer)) return null;
-    
+
         // Helper: return all text nodes within contentRef
         const getAllTextNodes = (node) => {
             const textNodes = [];
@@ -291,13 +302,13 @@ const MarkdownContent = React.memo(({ content, messageEndTag }) => {
             }
             return textNodes;
         };
-    
+
         const allTextNodes = getAllTextNodes(contentRef.current);
         const startNodeIndex = allTextNodes.indexOf(range.startContainer);
         const endNodeIndex = allTextNodes.indexOf(range.endContainer);
         const anchorNodeIndex = allTextNodes.indexOf(selection.anchorNode);
         const focusNodeIndex = allTextNodes.indexOf(selection.focusNode);
-    
+
         // Validate that both the range and selection indices are within bounds
         if (
             startNodeIndex === -1 ||
@@ -307,7 +318,7 @@ const MarkdownContent = React.memo(({ content, messageEndTag }) => {
         ) {
             return null;
         }
-    
+
         return {
             startNodeIndex,
             endNodeIndex,
@@ -320,7 +331,7 @@ const MarkdownContent = React.memo(({ content, messageEndTag }) => {
             text: range.toString()
         };
     }, []);
-    
+
     // Modified restoreSelection: use setBaseAndExtent to restore selection direction if available
     const restoreSelection = React.useCallback((savedSelection) => {
         if (!savedSelection || !contentRef.current) return;
@@ -336,14 +347,14 @@ const MarkdownContent = React.memo(({ content, messageEndTag }) => {
             while (currentNode = walker.nextNode()) {
                 allTextNodes.push(currentNode);
             }
-    
+
             const {
                 anchorNodeIndex,
                 anchorOffset,
                 focusNodeIndex,
                 focusOffset
             } = savedSelection;
-    
+
             if (
                 anchorNodeIndex < 0 ||
                 anchorNodeIndex >= allTextNodes.length ||
@@ -352,10 +363,10 @@ const MarkdownContent = React.memo(({ content, messageEndTag }) => {
             ) {
                 return;
             }
-    
+
             const selection = window.getSelection();
             selection.removeAllRanges();
-    
+
             // Use setBaseAndExtent (supported in most modern browsers) to keep the selection direction intact
             if (typeof selection.setBaseAndExtent === 'function') {
                 selection.setBaseAndExtent(
@@ -775,7 +786,7 @@ async function loadConversationsFromStorage() {
                     const messageDiv = document.createElement('div');
                     messageDiv.id = 'user-message';
                     // Preserve line breaks by replacing them with <br> tags
-                    messageDiv.innerHTML = msg.content.replace(/\n/g, '<br>'); // Change this line
+                    messageDiv.innerHTML = formatUserMessage(msg.content);
                     
                     messageContainer.appendChild(messageDiv);
                     
@@ -1205,7 +1216,7 @@ async function sendMessage(event) {
     const userMessageDiv = document.createElement('div');
     userMessageDiv.id = 'user-message';
     // Preserve line breaks by replacing them with <br> tags
-    userMessageDiv.innerHTML = inputValue.replace(/\n/g, '<br>'); // Change this line
+    userMessageDiv.innerHTML = formatUserMessage(inputValue);
     userMessageContainer.appendChild(userMessageDiv);
 
     // Add buttons for user message
@@ -1888,7 +1899,7 @@ async function switchConversation(conversationId) {
             const messageDiv = document.createElement('div');
             messageDiv.id = 'user-message';
             // Preserve line breaks by replacing them with <br> tags
-            messageDiv.innerHTML = msg.content.replace(/\n/g, '<br>'); // Change this line
+            messageDiv.innerHTML = formatUserMessage(msg.content);
             messageContainer.appendChild(messageDiv);
 
             // Add buttons for user message
@@ -2160,7 +2171,7 @@ async function handleMessageEdit(messageDiv, content, role) {
         userMessageContainer.className = 'user-message-container';
         const userMessageDiv = document.createElement('div');
         userMessageDiv.id = 'user-message';
-        userMessageDiv.innerHTML = newContent.replace(/\n/g, '<br>');
+        userMessageDiv.innerHTML = formatUserMessage(newContent);
         userMessageContainer.appendChild(userMessageDiv);
 
         // Add buttons for user message
@@ -2228,7 +2239,7 @@ async function handleMessageEdit(messageDiv, content, role) {
             );
         } else {
             // Preserve line breaks for user messages when canceling edits
-            newMessageDiv.innerHTML = contentToEdit.replace(/\n/g, '<br>'); // Change this line
+            newMessageDiv.innerHTML = formatUserMessage(contentToEdit); // Change this line
         }
         
         messageContainer.appendChild(newMessageDiv);
@@ -2326,7 +2337,7 @@ async function handleMessageEdit(messageDiv, content, role) {
             );
         } else {
             // Preserve line breaks for user messages when saving edits
-            newMessageDiv.innerHTML = newContent.replace(/\n/g, '<br>');
+            newMessageDiv.innerHTML = formatUserMessage(newContent);
         }
         
         messageContainer.appendChild(newMessageDiv);
@@ -3487,7 +3498,7 @@ function toggleDeepQuery() {
     const icon = deepQueryButton.querySelector('i');
     
     if (isDeepQueryMode) {
-        icon.style.color = '#55ff55';
+        icon.style.color = '#55cc55';
         userInput.placeholder = "Enter your query";
         deepQueryButton.classList.add('active'); // Add active class
     } else {
