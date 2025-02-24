@@ -142,9 +142,8 @@ def parse_results(html_content, results=DEFAULT_RESULTS):
 
     for a in results_list:
         href = a.get('href')
-        countLink += 1
-        
         if 'duckduckgo.com' not in href:
+            countLink += 1
             print(f'Source URL number {countLink}: {href}')
             links.append(href)
             if len(links) == results:
