@@ -12,13 +12,17 @@
     <script src="{{ url_for('static', filename='js/marked.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/dexie.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/mammoth.browser.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/pdf.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/react.production.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/react-dom.production.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/babel.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/svelte.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/katex.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/copy-tex.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/mhchem.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/render-a11y-string.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/auto-render.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/index.umd.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/pdf.min.js') }}"></script>
     <script>
         window.pdfjsLib = window.pdfjsLib || {};
         window.pdfjsLib.GlobalWorkerOptions = window.pdfjsLib.GlobalWorkerOptions || {};
@@ -65,7 +69,13 @@
             <div class="middle-panel">
                 <div class="chat-wrapper">
                     <div id="scroller">
-                        <div class="message-container" id="chat-messages"></div>
+                        <div class="message-container" id="chat-messages">
+                            <div class="message assistant-message" id="message-${messageId}">
+                                <div class="assistant-message-content">
+                                    <!-- Message content will be updated here -->
+                                </div>
+                            </div>
+                        </div>
                         <div id="anchor"></div>
                     </div>
                 </div>
@@ -142,6 +152,32 @@
                             rows="3"
                             style="display: none;"
                         ></textarea>
+                    </div>
+
+                    <div class="input-group">
+                        <label>
+                            <i class="fa fa-tags" aria-hidden="true"></i> Deep Query Tags
+                        </label>
+                        <div class="tag-inputs">
+                            <div class="tag-input">
+                                <label for="start-tag">Start Tag</label>
+                                <input 
+                                    type="text" 
+                                    id="start-tag" 
+                                    name="start-tag" 
+                                    placeholder="Example: <think>"
+                                >
+                            </div>
+                            <div class="tag-input">
+                                <label for="end-tag">End Tag</label>
+                                <input 
+                                    type="text" 
+                                    id="end-tag" 
+                                    name="end-tag" 
+                                    placeholder="Example: </think>"
+                                >
+                            </div>
+                        </div>
                     </div>
 
                     <button type="button" onclick="saveAdditionalSettings()">
