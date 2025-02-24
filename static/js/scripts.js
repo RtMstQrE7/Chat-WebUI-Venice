@@ -3487,7 +3487,7 @@ function toggleDeepQuery() {
     const icon = deepQueryButton.querySelector('i');
     
     if (isDeepQueryMode) {
-        icon.style.color = '#00ff00';
+        icon.style.color = '#55ff55';
         userInput.placeholder = "Enter your query";
         deepQueryButton.classList.add('active'); // Add active class
     } else {
