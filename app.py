@@ -136,9 +136,22 @@ def parse_results(html_content, results=DEFAULT_RESULTS):
     if not results_list:
         return []
     
-    links = [a.get('href') for a in results_list[:results]]
-    return links
+    links = []
+    countLink = 0
+    print()
 
+    for a in results_list:
+        href = a.get('href')
+        countLink += 1
+        
+        if 'duckduckgo.com' not in href:
+            print(f'Source URL number {countLink}: {href}')
+            links.append(href)
+            if len(links) == results:
+                break
+    print()
+    countLink = 0
+    return links
 # Function to fetch and extract text from a URL and format it
 async def fetch_and_format_text(session, url, index, retries=RETRY_LIMIT):
     for attempt in range(retries + 1):
@@ -184,6 +197,7 @@ def handle_search_command(user_content, results=DEFAULT_RESULTS):
         return ''.join(formatted_texts)
     except Exception as e:
         return f"An error occurred: {e}"
+
 # Function to handle YouTube command
 def handle_youtube_command(user_content):
     patterns = [
@@ -316,9 +330,11 @@ def save_settings_route():
 def chat():
     user_content = request.json.get('message')
     conversation_history = request.json.get('conversation', [])
-    selected_model = request.json.get('model', "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo")
+    selected_model = request.json.get('model')
     system_content = request.json.get('systemContent', SYSTEM_CONTENT)
     parameters = request.json.get('parameters', {})
+    is_deep_query_mode = request.json.get('isDeepQueryMode', False)
+    start_tag = request.json.get('startTag', '<think>')
 
     # Convert string values to appropriate types for numeric parameters
     if parameters:
@@ -341,9 +357,10 @@ def chat():
                 additional_text = handle_youtube_command(user_content)
                 user_content = re.sub(r'(https?://)?(www\.)?(youtube|youtu|youtube-nocookie)\.(com|be)/[^ ]+', '', user_content).strip()
                 if user_content:
+                    system_content = "You are an assistant specialized in Question & Answer. Please provide a clear and concise response to the user query based on the video transcript. Query: {}".format(user_content)
                     user_content = f"{user_content} \n\n "
                 else:
-                    user_content = "Explain simply what this video is about using proper format: \n\n "
+                    system_content = "You are an assistant specialized in summarizing videos. Please provide a clear, concise, and well-formatted summary of the video content."
 
             # Check for arXiv link
             elif re.search(r'https?://arxiv\.org/(abs|pdf)/\d+\.\d+(v\d+)?', user_content):
@@ -353,9 +370,10 @@ def chat():
                 # Extract any user query after the arXiv link
                 user_content = re.sub(r'https?://arxiv\.org/(abs|pdf)/\d+\.\d+(v\d+)?[^ ]*', '', user_content).strip()
                 if user_content:
+                    system_content = system_content = "You are an assistant specialized in Question & Answer. Please provide a clear and concise response to the user query based on the arXiv paper. Query: {}".format(user_content)
                     user_content = f"{user_content} \n\n "
                 else:
-                    user_content = "Explain simply what this arXiv paper is about using proper formatting: \n\n "
+                    system_content = "You are an assistant specialized in summarizing arXiv papers. Please provide a clear, concise, and well-formatted summary of the paper's content."
 
             # Check for general link
             elif re.search(r'https?://[^\s]+', user_content):
@@ -364,17 +382,19 @@ def chat():
                     return "Please provide a valid URL"
                 user_content = re.sub(r'https?://[^\s]+[^ ]*', '', user_content).strip()
                 if user_content:
+                    system_content = "You are an assistant specialized in Question & Answer. Please provide a clear and concise response to the user query based on the webpage content. Query: {}".format(user_content)
                     user_content = f"{user_content} \n\n "
                 else:
-                    user_content = "Explain simply what this webpage is about using proper format: \n\n "
+                    system_content = "You are an assistant specialized in summarizing webpages. Please provide a clear, concise, and well-formatted summary of the webpage content."
 
             # No link, treat as general search
             else:
                 additional_text = handle_search_command(user_content)
-                user_content = f"""CURRENT_SYSTEM_TIME = f"{time.strftime("%Y-%m-%d %H:%M:%S")}" \n \n 
+                user_content = f"SEARCH QUERY: {user_content} \n\n "
+                system_content = f"""CURRENT_SYSTEM_TIME = f"{time.strftime("%Y-%m-%d %H:%M:%S")}" \n \n 
                                 You are a knowledgeable search assistant. Analyze the following search query and use latest information from the provided source texts to create a comprehensive response: \n \n 
 
-                                QUERY: {user_content} \n \n 
+                                SEARCH QUERY: {user_content} \n \n 
 
                                 Instructions:
                                 - Focus ONLY on directly answering the query using the provided sources
@@ -395,9 +415,6 @@ def chat():
                                 - Scientific: Use LaTeX for formulas (\\(inline\\) or \\[block\\])
                                 - Biographical: Focus on key facts and achievements
                                 - Products: Group options by category (max 5 recommendations)
-
-                                Source texts for analysis: 
-                                \n \n 
                                 """
 
     # Handle messages with images
@@ -413,12 +430,17 @@ def chat():
         else:
             messages = conversation_history + [{"role": "user", "content": user_content + additional_text}]
 
+    # Add deep query mode message if enabled
+    if is_deep_query_mode:
+        messages.append({"role": "assistant", "content": f"{start_tag}\n"})
+
     def generate():
         if openai_client is None:
             yield "Please set your API key and base URL in the settings."
             return
 
         try:
+            print(messages)
             if parameters:
                 stream = openai_client.chat.completions.create(
                     model=selected_model,
@@ -461,6 +483,7 @@ def continue_generation():
             return
 
         try:
+            print(messages)
             if parameters:
                 stream = openai_client.chat.completions.create(
                     model=selected_model,
@@ -495,11 +518,15 @@ def generate_title():
         messages = [
             {
                 "role": "system",
-                "content": "You are a helpful assistant. Generate a very brief title (max 5 words) for a conversation based on the user's message and the assistant's response. The title should capture the main topic or purpose of the conversation. Respond with ONLY the title, without quotes or extra text."
+                "content": "You are an expert at generating short titles for conversations. Generate a very brief title (MAXIMUM 5 words) for a conversation based on the user's message and the assistant's response. The title should capture the main topic or purpose of the conversation. Respond with ONLY the title, without quotes, extra text, or any other characters."
             },
             {
                 "role": "user",
                 "content": f"User message: {message} \n \n Assistant response: {assistant_response}"
+            },
+            {
+                "role": "assistant",
+                "content": "The suitable title for this conversation is: "
             }
         ]
         
