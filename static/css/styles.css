@@ -11,7 +11,7 @@
 body,html {
     height: 100%;
     margin: 0;
-    font-family: "Segoe UI","San Francisco","Roboto",Arial,sans-serif;
+    font-family: "Segoe UI","San Francisco","Helvetica",Arial,sans-serif;
     scroll-behavior: smooth;
     text-rendering: optimizeLegibility
 }
@@ -112,7 +112,6 @@ body,html {
     background: 0 0;
     border: 0;
     color: #ececec;
-    font-weight: lighter;
     border-radius: 5px;
     padding: 9px;
     margin-left: 9px;
@@ -170,7 +169,7 @@ body,html {
     margin-top: 9px;
     margin-right: auto;
     margin-left: 7.5px;
-    font: 17px"Segoe UI",sans-serif;
+    font: 17px"Segoe UI";
     font-weight: 599;
     line-height: 1.5;
     height: 30px;
@@ -595,7 +594,7 @@ div ul li code {
 }
 
 .code-block pre code {
-    font: 15.3px "Consolas";
+    font: 15px "Consolas";
     padding: 19px !important;
     line-height: 1.9 !important;
     background-color: #1a1a1a !important;
@@ -606,7 +605,7 @@ div ul li code {
     color: #b3b3b3;
     padding: 3px 7px 3px 19px;
     display: flex;
-    font: 13.97px"Consolas";
+    font: 13.97px"Arial";
     justify-content: space-between;
     align-items: center
 }
@@ -1234,13 +1233,23 @@ div ul li code {
 }
 
 .popup-content .input-group {
-    margin-bottom: 15px
+    margin-bottom: 20px;
 }
 
-.popup-content .input-group label {
+.popup-content .input-group:last-of-type {
+    margin-bottom: 15px;
+}
+
+.popup-content .input-group > label {
     display: block;
     margin-bottom: 5px;
-    color: #ececec
+    color: #ececec;
+    font-size: 14px;
+}
+
+.popup-content .input-group > label i {
+    opacity: 0.7;
+    margin-right: 5px;
 }
 
 .popup-content input[type=number] {
@@ -1449,7 +1458,7 @@ background-color: #404040;
     gap: 5px;
     opacity: 0;
     transition: opacity .2s ease;
-    margin-top: 5px;
+    margin-top: 3px;
     padding: 0 5px
 }
 
@@ -1517,7 +1526,7 @@ background-color: #404040;
     gap: 5px;
     align-items: center;
     transition: opacity .2s ease;
-    margin-top: 3px
+    margin-top: 5px
 }
 
 .user-message-container .message-buttons {
@@ -1595,4 +1604,150 @@ background-color: #404040;
 
 .hljs-template-variable {
     color: #e06c75;  /* Pink/red for variables */
+}
+
+/* Thought process styling */
+.think-block {
+    margin: 12px 0;
+    border-radius: 5px;
+    background: #2e2e2e;
+    overflow: hidden;
+    border: 0.3px solid #3e3e3e;
+}
+
+.think-toggle {
+    width: 100%;
+    padding: 10px 19px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #333;
+    border: none;
+    color: #b3b3b3;
+    cursor: pointer;
+    font-size: 13.97px;
+    font-family: "Arial";
+    text-align: left;
+    transition: background-color 0.2s ease;
+}
+
+.think-toggle:hover {
+    background: #3a3a3a;
+    color: #ececec;
+}
+
+.think-toggle span {
+    margin-right: 3px;  /* Small gap between text and icon */
+}
+
+.think-toggle i {
+    font-size: 12px;
+    transition: transform 0.2s ease;
+    opacity: 0.7;
+}
+
+.think-toggle:hover i {
+    opacity: 1;
+}
+
+.think-content {
+    padding: 9.7px 19.7px;
+    font-size: 14px;
+    line-height: 1.4;
+    color: #888;
+    background: #2e2e2e;
+    font-family: "Segoe UI", "San Francisco", "Helvetica", Arial, sans-serif;
+    letter-spacing: 0.2px;
+}
+
+.think-content p {
+    margin: 0 0 0.5em 0;
+}
+
+.think-content p:last-child {
+    margin-bottom: 0;
+}
+
+/* Bullet points and numbered lists */
+.think-content ul, 
+.think-content ol {
+    margin: 0.3em 0;
+    padding-left: 1.2em;
+}
+
+.think-content li {
+    margin: 0.2em 0;
+}
+
+/* Emphasis */
+.think-content strong,
+.think-content em {
+    color: #b3b3b3;
+    font-weight: 500;
+}
+
+/* Section breaks */
+.think-content hr {
+    border: none;
+    border-top: 1px solid #333;
+    margin: 0.7em 0;
+}
+
+/* Indentation for logical flow */
+.think-content blockquote {
+    margin: 0.5em 0;
+    padding-left: 0.7em;
+    border-left: 1px solid #333;
+    color: #777;
+}
+
+/* Add these styles for the tag inputs section */
+.tag-inputs {
+    display: flex;
+    gap: 15px;
+    margin-top: 5px;
+}
+
+.tag-input {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.tag-input label {
+    color: #888;
+    font-size: 13px;
+    font-weight: normal;
+}
+
+.tag-input input {
+    width: 100%;
+    height: 38px;
+    background-color: #2f2f2f;
+    border: 1px solid #404040;
+    border-radius: 5px;
+    color: #ececec;
+    font-size: 14px;
+    padding: 10px;
+    box-sizing: border-box;
+    font-family: "Consolas", monospace;
+    transition: all 0.2s ease;
+}
+
+.tag-input input:focus {
+    border-color: #505050;
+    outline: none;
+    background-color: #333;
+}
+
+.tag-input input::placeholder {
+    color: #888;
+    opacity: 0.7;
+    font-size: 13px;
+}
+
+.katex {
+    overflow-x: auto;
+    white-space: normal;
 }
