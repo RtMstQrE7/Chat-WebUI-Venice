@@ -274,47 +274,56 @@ const MarkdownContent = React.memo(({ content, messageEndTag }) => {
     // Save selection state before update
     const saveSelection = React.useCallback(() => {
         if (!contentRef.current) return null;
-        
+    
         const selection = window.getSelection();
         if (!selection.rangeCount) return null;
-        
+    
         const range = selection.getRangeAt(0);
         if (!contentRef.current.contains(range.commonAncestorContainer)) return null;
-
+    
+        // Helper: return all text nodes within contentRef
         const getAllTextNodes = (node) => {
             const textNodes = [];
-            const walker = document.createTreeWalker(
-                node,
-                NodeFilter.SHOW_TEXT,
-                null,
-                false
-            );
+            const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT, null, false);
             let currentNode;
             while (currentNode = walker.nextNode()) {
                 textNodes.push(currentNode);
             }
             return textNodes;
         };
-
+    
         const allTextNodes = getAllTextNodes(contentRef.current);
         const startNodeIndex = allTextNodes.indexOf(range.startContainer);
         const endNodeIndex = allTextNodes.indexOf(range.endContainer);
-
-        if (startNodeIndex === -1 || endNodeIndex === -1) return null;
-
+        const anchorNodeIndex = allTextNodes.indexOf(selection.anchorNode);
+        const focusNodeIndex = allTextNodes.indexOf(selection.focusNode);
+    
+        // Validate that both the range and selection indices are within bounds
+        if (
+            startNodeIndex === -1 ||
+            endNodeIndex === -1 ||
+            anchorNodeIndex === -1 ||
+            focusNodeIndex === -1
+        ) {
+            return null;
+        }
+    
         return {
             startNodeIndex,
             endNodeIndex,
             startOffset: range.startOffset,
             endOffset: range.endOffset,
+            anchorNodeIndex,
+            anchorOffset: selection.anchorOffset,
+            focusNodeIndex,
+            focusOffset: selection.focusOffset,
             text: range.toString()
         };
     }, []);
-
-    // Restore selection after update
+    
+    // Modified restoreSelection: use setBaseAndExtent to restore selection direction if available
     const restoreSelection = React.useCallback((savedSelection) => {
         if (!savedSelection || !contentRef.current) return;
-
         try {
             const allTextNodes = [];
             const walker = document.createTreeWalker(
@@ -323,30 +332,50 @@ const MarkdownContent = React.memo(({ content, messageEndTag }) => {
                 null,
                 false
             );
-
             let currentNode;
             while (currentNode = walker.nextNode()) {
                 allTextNodes.push(currentNode);
             }
-
-            // Validate indices before accessing nodes
-            if (savedSelection.startNodeIndex >= 0 && 
-                savedSelection.startNodeIndex < allTextNodes.length &&
-                savedSelection.endNodeIndex >= 0 && 
-                savedSelection.endNodeIndex < allTextNodes.length) {
-                
-                const startNode = allTextNodes[savedSelection.startNodeIndex];
-                const endNode = allTextNodes[savedSelection.endNodeIndex];
-
-                if (startNode && endNode) {
-                    const range = document.createRange();
-                    range.setStart(startNode, savedSelection.startOffset);
-                    range.setEnd(endNode, savedSelection.endOffset);
-
-                    const selection = window.getSelection();
-                    selection.removeAllRanges();
-                    selection.addRange(range);
-                }
+    
+            const {
+                anchorNodeIndex,
+                anchorOffset,
+                focusNodeIndex,
+                focusOffset
+            } = savedSelection;
+    
+            if (
+                anchorNodeIndex < 0 ||
+                anchorNodeIndex >= allTextNodes.length ||
+                focusNodeIndex < 0 ||
+                focusNodeIndex >= allTextNodes.length
+            ) {
+                return;
+            }
+    
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+    
+            // Use setBaseAndExtent (supported in most modern browsers) to keep the selection direction intact
+            if (typeof selection.setBaseAndExtent === 'function') {
+                selection.setBaseAndExtent(
+                    allTextNodes[anchorNodeIndex],
+                    anchorOffset,
+                    allTextNodes[focusNodeIndex],
+                    focusOffset
+                );
+            } else {
+                // Fallback: If setBaseAndExtent is not available, fall back to using a range.
+                const range = document.createRange();
+                range.setStart(
+                    allTextNodes[savedSelection.startNodeIndex],
+                    savedSelection.startOffset
+                );
+                range.setEnd(
+                    allTextNodes[savedSelection.endNodeIndex],
+                    savedSelection.endOffset
+                );
+                selection.addRange(range);
             }
         } catch (e) {
             console.warn('Could not restore selection:', e);
