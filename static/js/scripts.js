@@ -6,14 +6,11 @@ const PARAMETER_PRESETS = {
 };
 
 // Add these default tag constants
-let START_TAG = '<think>\n';  // Default start tag
+let START_TAG = '<think>';  // Default start tag
 let END_TAG = '</think>';     // Default end tag
 
 // Add this at the top with other constants
 const DEFAULT_END_TAG = '</think>';  // Store default tag for backwards compatibility
-
-// Add this at the top with other constants
-const DEFAULT_END_TAGS = ['</think>', '<|end_of_thought|>']; // Add any other common end tags here
 
 const allowedFileTypes = [
     'text/plain', 
@@ -96,7 +93,7 @@ function stopStreamTimer() {
 }
 
 function checkForEndTag(content) {
-    return DEFAULT_END_TAGS.some(tag => content.includes(tag)) || content.includes(END_TAG);
+    return DEFAULT_END_TAG.some(tag => content.includes(tag)) || content.includes(END_TAG);
 }
 
 function formatUserMessage(input) {
