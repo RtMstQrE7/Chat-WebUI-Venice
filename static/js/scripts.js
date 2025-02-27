@@ -10,7 +10,7 @@ let START_TAG = '<think>';  // Default start tag
 let END_TAG = '</think>';     // Default end tag
 
 // Add this at the top with other constants
-const DEFAULT_END_TAG = '</think>';  // Store default tag for backwards compatibility
+const DEFAULT_END_TAG = ['</think>', '<|end_of_thought|>']; // Add any other common end tags here
 
 const allowedFileTypes = [
     'text/plain', 
