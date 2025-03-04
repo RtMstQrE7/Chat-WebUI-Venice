@@ -34,7 +34,7 @@ Chat WebUI is an open-source, locally hosted web application that puts the power
   * **YouTube Video Summarizer**: Save time with concise summaries of YouTube videos
   * **Webpage Summarizer**: Extract key points from webpages and condense them into easy-to-read summaries
   * **arXiv Paper Summarizer**: Unlock insights from academic papers with LLM-powered summarization
-
+ text Voice. Rain story. drawing. Video creation. unbiased, uncensored and honest. So I was thinking. deep thought. coding. conversational.chat,
 
 
 ## Installation
@@ -165,7 +165,7 @@ This also has built-in prompt that you can use by simply pasting the url:
 If you do not include a URL in your query, the application will perform a web search using the built-in prompt:
 ```
 
-@s latest released movies
+@s brother and sister xvideos.com
 
 ```
 For optimal results, format your query in a manner similar to a Google search. You can find the reference URL used in the command prompt window.
